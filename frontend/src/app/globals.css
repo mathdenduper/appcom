@@ -1,3 +1,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0C0A1A;
+  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+}
+
+/* Define a custom class for the background in case we need it elsewhere */
+.bg-background {
+  background-color: #0C0A1A;
+  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+}
+
+/* Base style for the solid typewriter cursor */
+.typewriter-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: #a9a3c2; /* Muted lavender colour */
+  margin-left: 2px; /* CORRECTED: Reduced distance from the text */
+  vertical-align: middle;
+}
+
+/* Keyframe animation for blinking effect */
+@keyframes blink {
+  50% {
+    background-color: transparent;
+  }
+}
+
+/* This class adds the blinking animation when applied */
+.typewriter-cursor.blinking {
+  animation: blink 1s infinite; /* CORRECTED: Slowed down the blinking speed */
+}
