@@ -1,13 +1,15 @@
+# backend/main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# This is important security code that allows your front-end
-# to communicate with this back-end. We will add the live
-# URLs for your website here later.
+# This is the crucial security setting.
+# We are telling your back-end that it is safe to accept
+# requests from your front-end website.
 origins = [
-    "http://localhost:3000",
+    "https://appcom-tau.vercel.app"
 ]
 
 app.add_middleware(
@@ -21,8 +23,6 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     """
-    This is the first "endpoint" of your API.
-    When the front-end makes a request to the main URL,
-    this function runs and sends back a confirmation message.
+    Root endpoint for the API. Confirms the server is running.
     """
     return {"message": "Welcome to the StudyAI API!"}
