@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-// We are NO LONGER using the Supabase client directly from the front-end for auth
-// import { supabase } from '../supabaseClient'; 
+import { supabase } from '../supabaseClient';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -19,32 +18,24 @@ export default function AuthForm({ mode }: AuthFormProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
-    // --- THIS IS THE SMART LOGIC FOR THE FORM ---
-    // In production, it uses the live Render URL. In dev, it uses the Caddy proxy.
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const endpointPath = mode === 'signin' ? '/login' : '/signup';
-    // For development, Caddy forwards `/api/login` to the backend's `/login`
-    const finalUrl = baseUrl ? `${baseUrl}${endpointPath}` : `/api${endpointPath}`;
 
     try {
-      // We now use fetch to talk to our own backend, which then talks to Supabase.
-      const response = await fetch(finalUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.detail || 'An authentication error occurred.');
+      let authResponse;
+      if (mode === 'signup') {
+        // Since email confirmation is off, a successful sign-up also logs the user in.
+        authResponse = await supabase.auth.signUp({ email, password });
+      } else {
+        authResponse = await supabase.auth.signInWithPassword({ email, password });
       }
 
-      alert("Success! Redirecting to your dashboard...");
+      if (authResponse.error) throw authResponse.error;
+
+      // --- THIS IS THE CORRECTED PART ---
+      // The alert is now removed. We redirect immediately and silently.
       window.location.href = '/dashboard';
 
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'An error occurred.');
     } finally {
       setLoading(false);
     }

@@ -644,6 +644,12 @@ video {
 .mt-6 {
   margin-top: 1.5rem;
 }
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.mt-8 {
+  margin-top: 2rem;
+}
 .flex {
   display: flex;
 }
@@ -811,8 +817,14 @@ video {
 .pt-20 {
   padding-top: 5rem;
 }
+.pt-40 {
+  padding-top: 10rem;
+}
 .text-center {
   text-align: center;
+}
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 .text-2xl {
   font-size: 1.5rem;
