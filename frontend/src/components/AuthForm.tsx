@@ -1,3 +1,4 @@
+// frontend/src/components/AuthForm.tsx
 'use client';
 
 import { useState } from 'react';
@@ -9,6 +10,9 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
+  // NEW: State for first and last name
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -20,18 +24,25 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setError(null);
 
     try {
-      let authResponse;
       if (mode === 'signup') {
-        // Since email confirmation is off, a successful sign-up also logs the user in.
-        authResponse = await supabase.auth.signUp({ email, password });
+        // We now include the user's name in the sign-up request
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+            }
+          }
+        });
+        if (error) throw error;
       } else {
-        authResponse = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
       }
 
-      if (authResponse.error) throw authResponse.error;
-
-      // --- THIS IS THE CORRECTED PART ---
-      // The alert is now removed. We redirect immediately and silently.
+      // After a successful signup or signin, redirect to the dashboard
       window.location.href = '/dashboard';
 
     } catch (err: any) {
@@ -51,6 +62,27 @@ export default function AuthForm({ mode }: AuthFormProps) {
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* NEW: Conditional fields for first and last name */}
+        {mode === 'signup' && (
+          <div className="flex gap-4">
+            <input
+              type="text"
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+              required
+            />
+          </div>
+        )}
         <input
           type="email"
           placeholder="Email"
