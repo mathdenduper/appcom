@@ -607,9 +607,6 @@ video {
 .fixed {
   position: fixed;
 }
-.absolute {
-  position: absolute;
-}
 .relative {
   position: relative;
 }
@@ -646,9 +643,6 @@ video {
 }
 .mt-6 {
   margin-top: 1.5rem;
-}
-.block {
-  display: block;
 }
 .flex {
   display: flex;
@@ -816,15 +810,6 @@ video {
 }
 .pt-20 {
   padding-top: 5rem;
-}
-.pt-48 {
-  padding-top: 12rem;
-}
-.pt-40 {
-  padding-top: 10rem;
-}
-.pb-24 {
-  padding-bottom: 6rem;
 }
 .text-center {
   text-align: center;

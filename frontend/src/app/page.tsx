@@ -53,9 +53,6 @@ const Typewriter = ({ words }: { words: string[] }) => {
 
 const Hero = () => {
   return (
-    // THIS IS THE CORRECTED PART
-    // This now correctly fills the entire viewport height (h-screen)
-    // and uses flexbox to perfectly centre the content block within it.
     <div className="h-screen flex flex-col justify-center items-center text-center">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
         Meet StudyAI
@@ -110,17 +107,23 @@ export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
   useEffect(() => {
-    const apiUrl = '/api'; 
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => setMessage(data.message))
+    // This simple fetch to /api is all that's needed for the Caddy proxy.
+    fetch('/api')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        setMessage(data.message);
+      })
       .catch(error => {
         console.error("Failed to fetch from API via proxy:", error);
-        setMessage("Failed to connect.");
+        setMessage("Failed to connect. Please ensure all three servers are running.");
       });
   }, []);
 
-  // This is the corrected, syntactically valid return statement.
   return (
     <>
       <div className="container mx-auto px-6">
