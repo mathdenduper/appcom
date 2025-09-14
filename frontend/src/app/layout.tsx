@@ -12,15 +12,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-background text-white`}>
         <Header />
-        {/* The main content is now passed through directly without extra padding */}
-        <main>
+        <main className="pt-20"> 
           {children}
         </main>
       </body>
