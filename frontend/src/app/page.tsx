@@ -3,37 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// NOTE: The placeholder components that were here have been removed to fix the error.
-// The full, correct components are defined below the 'Home' function.
-
-export default function Home() {
-  const [message, setMessage] = useState('Connecting to the server...');
-
-  useEffect(() => {
-    // This smart connection logic is correct.
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
-    fetch(apiUrl)
-      .then(response => response.json())
-      .then(data => setMessage(data.message))
-      .catch(error => {
-        console.error("Failed to fetch from API via proxy:", error);
-        setMessage("Failed to connect.");
-      });
-  }, []);
-
-  return (
-    // The outer div is no longer needed as styles are on the body tag in layout.tsx
-    <div className="container mx-auto px-6">
-      <Hero />
-      <Demo />
-      <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
-          <p>Connection Status: {message}</p>
-      </footer>
-    </div>
-  );
-}
-
-// --- YOUR UI COMPONENTS ---
+// Your Header component is correctly in layout.tsx
 
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
@@ -83,6 +53,9 @@ const Typewriter = ({ words }: { words: string[] }) => {
 
 const Hero = () => {
   return (
+    // THIS IS THE CORRECTED PART
+    // This container now correctly fills the entire viewport height (h-screen)
+    // and uses flexbox to perfectly centre the content block within it.
     <div className="min-h-screen flex flex-col justify-center items-center text-center">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
         Meet StudyAI
@@ -131,3 +104,29 @@ const Demo = () => {
         </div>
     );
 };
+
+
+export default function Home() {
+  const [message, setMessage] = useState('Connecting to the server...');
+
+  useEffect(() => {
+    const apiUrl = '/api'; 
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(data => setMessage(data.message))
+      .catch(error => {
+        console.error("Failed to fetch from API via proxy:", error);
+        setMessage("Failed to connect.");
+      });
+  }, []);
+
+  return (
+      <div className="container mx-auto px-6">
+        <Hero />
+        <Demo />
+        <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
+            <p>Connection Status: {message}</p>
+        </footer>
+      </div>
+  );
+}

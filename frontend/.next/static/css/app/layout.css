@@ -607,6 +607,9 @@ video {
 .fixed {
   position: fixed;
 }
+.absolute {
+  position: absolute;
+}
 .left-0 {
   left: 0px;
 }
@@ -641,6 +644,9 @@ video {
 .mt-6 {
   margin-top: 1.5rem;
 }
+.block {
+  display: block;
+}
 .flex {
   display: flex;
 }
@@ -649,6 +655,9 @@ video {
 }
 .h-64 {
   height: 16rem;
+}
+.h-screen {
+  height: 100vh;
 }
 .min-h-\[344px\] {
   min-height: 344px;
@@ -804,6 +813,15 @@ video {
 }
 .pt-20 {
   padding-top: 5rem;
+}
+.pt-48 {
+  padding-top: 12rem;
+}
+.pt-40 {
+  padding-top: 10rem;
+}
+.pb-24 {
+  padding-bottom: 6rem;
 }
 .text-center {
   text-align: center;

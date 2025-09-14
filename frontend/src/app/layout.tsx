@@ -19,7 +19,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-background text-white`}>
         <Header />
-        <main className="pt-20"> 
+        {/* The main content now starts at the very top of the page */}
+        <main> 
           {children}
         </main>
       </body>
