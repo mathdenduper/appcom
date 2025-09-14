@@ -54,9 +54,9 @@ const Typewriter = ({ words }: { words: string[] }) => {
 const Hero = () => {
   return (
     // THIS IS THE CORRECTED PART
-    // This container now correctly fills the entire viewport height (h-screen)
+    // This now correctly fills the entire viewport height (h-screen)
     // and uses flexbox to perfectly centre the content block within it.
-    <div className="min-h-screen flex flex-col justify-center items-center text-center">
+    <div className="h-screen flex flex-col justify-center items-center text-center">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
         Meet StudyAI
       </h1>
@@ -120,7 +120,9 @@ export default function Home() {
       });
   }, []);
 
+  // This is the corrected, syntactically valid return statement.
   return (
+    <>
       <div className="container mx-auto px-6">
         <Hero />
         <Demo />
@@ -128,5 +130,6 @@ export default function Home() {
             <p>Connection Status: {message}</p>
         </footer>
       </div>
+    </>
   );
 }
