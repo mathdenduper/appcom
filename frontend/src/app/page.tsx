@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// Your Header component is correctly in layout.tsx
+// NOTE: The incorrect placeholder components that were here have been removed.
+// The full, correct components are defined below.
 
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
@@ -106,9 +107,13 @@ const Demo = () => {
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
+  // --- THIS IS THE FINAL, SMART CONNECTION LOGIC ---
   useEffect(() => {
-    // This simple fetch to /api is all that's needed for the Caddy proxy.
-    fetch('/api')
+    // In production, this uses your live Render URL from Vercel's environment variables.
+    // In development (Codespaces), it defaults to the relative path '/api'.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
+    
+    fetch(apiUrl)
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -119,20 +124,19 @@ export default function Home() {
         setMessage(data.message);
       })
       .catch(error => {
-        console.error("Failed to fetch from API via proxy:", error);
+        console.error("Failed to fetch from API:", error);
         setMessage("Failed to connect. Please ensure all three servers are running.");
       });
   }, []);
 
   return (
-    <>
-      <div className="container mx-auto px-6">
-        <Hero />
-        <Demo />
-        <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
-            <p>Connection Status: {message}</p>
-        </footer>
-      </div>
-    </>
+    // This is the corrected return statement
+    <div className="container mx-auto px-6">
+      <Hero />
+      <Demo />
+      <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
+          <p>Connection Status: {message}</p>
+      </footer>
+    </div>
   );
 }

@@ -607,6 +607,9 @@ video {
 .fixed {
   position: fixed;
 }
+.relative {
+  position: relative;
+}
 .left-0 {
   left: 0px;
 }

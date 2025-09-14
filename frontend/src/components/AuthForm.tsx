@@ -1,9 +1,9 @@
-// frontend/src/components/AuthForm.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '../supabaseClient';
+// We are NO LONGER using the Supabase client directly from the front-end for auth
+// import { supabase } from '../supabaseClient'; 
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -23,18 +23,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
     // --- THIS IS THE SMART LOGIC FOR THE FORM ---
     // In production, it uses the live Render URL. In dev, it uses the Caddy proxy.
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const endpoint = mode === 'signin' ? `${baseUrl}/api/login` : `${baseUrl}/api/signup`;
+    const endpointPath = mode === 'signin' ? '/login' : '/signup';
+    // For development, Caddy forwards `/api/login` to the backend's `/login`
+    const finalUrl = baseUrl ? `${baseUrl}${endpointPath}` : `/api${endpointPath}`;
 
     try {
       // We now use fetch to talk to our own backend, which then talks to Supabase.
-      const response = await fetch(endpoint, {
+      const response = await fetch(finalUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        const result = await response.json();
         throw new Error(result.detail || 'An authentication error occurred.');
       }
 
