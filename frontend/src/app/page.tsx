@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-// Header Component
+// Header Component (Your Code)
 const Header = () => {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-black bg-opacity-30 backdrop-blur-lg border-b border-gray-800">
@@ -23,7 +23,7 @@ const Header = () => {
   );
 };
 
-// Updated Typewriter Animation Component with refined cursor logic
+// Typewriter Animation Component (Your Code)
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
     const [charIndex, setCharIndex] = useState(0);
@@ -39,13 +39,11 @@ const Typewriter = ({ words }: { words: string[] }) => {
         let timeoutId: NodeJS.Timeout;
 
         if (isPaused) {
-            // If paused, wait for the delay before starting to delete
             timeoutId = setTimeout(() => {
                 setIsPaused(false);
                 setIsDeleting(true);
             }, pauseDelay);
         } else if (isDeleting) {
-            // If deleting, remove characters
             if (charIndex > 0) {
                 timeoutId = setTimeout(() => setCharIndex(charIndex - 1), deletingSpeed);
             } else {
@@ -53,11 +51,9 @@ const Typewriter = ({ words }: { words: string[] }) => {
                 setWordIndex((prev) => (prev + 1) % words.length);
             }
         } else {
-            // If typing, add characters
             if (charIndex < words[wordIndex].length) {
                 timeoutId = setTimeout(() => setCharIndex(charIndex + 1), typingSpeed);
             } else {
-                // Word is fully typed, start the pause
                 setIsPaused(true);
             }
         }
@@ -69,14 +65,13 @@ const Typewriter = ({ words }: { words: string[] }) => {
     return (
         <span className="text-purple-400">
             {currentText}
-            {/* The cursor now has a conditional class for blinking */}
             <span className={`typewriter-cursor ${isPaused ? 'blinking' : ''}`}></span>
         </span>
     );
 };
 
 
-// Hero Section Component
+// Hero Section Component (Your Code)
 const Hero = () => {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center text-center pt-20">
@@ -99,7 +94,7 @@ const Hero = () => {
   );
 };
 
-// AI Demo Section Component
+// AI Demo Section Component (Your Code)
 const Demo = () => {
     return (
         <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
@@ -109,7 +104,6 @@ const Demo = () => {
             </div>
             
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-start">
-                {/* Input Area */}
                 <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
                     <textarea 
                         className="w-full h-64 bg-gray-800 border border-gray-700 rounded-lg p-4 text-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition"
@@ -119,8 +113,6 @@ const Demo = () => {
                         Generate Preview
                     </button>
                 </div>
-
-                {/* Preview Area */}
                 <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 min-h-[344px]">
                     <h3 className="font-semibold text-white text-lg mb-4">Generated Flashcards:</h3>
                     <div className="space-y-3 text-gray-400">
@@ -136,20 +128,22 @@ const Demo = () => {
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
-  // This is the new, non-visual code that handles the connection.
+  // --- THIS IS THE CORRECTED CONNECTION LOGIC ---
   useEffect(() => {
-    // In production, this uses the Vercel environment variable.
-    // In development (Codespaces), it uses the '/api' proxy.
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
-    
-    fetch(apiUrl)
-      .then(response => response.json())
+    // This now ONLY uses the /api path, forcing it to use the Caddy reverse proxy.
+    fetch('/api')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
         setMessage(data.message);
       })
       .catch(error => {
-        console.error("Failed to fetch from API:", error);
-        setMessage("Failed to connect. Please ensure both servers are running.");
+        console.error("Failed to fetch from API via proxy:", error);
+        setMessage("Failed to connect. This is the final attempt.");
       });
   }, []);
 
