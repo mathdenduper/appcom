@@ -19,24 +19,30 @@ export default function AuthForm({ mode }: AuthFormProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    
+    // --- THIS IS THE SMART LOGIC FOR THE FORM ---
+    // In production, it uses the live Render URL. In dev, it uses the Caddy proxy.
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = mode === 'signin' ? `${baseUrl}/api/login` : `${baseUrl}/api/signup`;
 
     try {
-      let authResponse;
-      if (mode === 'signup') {
-        // Sign up the user. Since email confirmation is off, this will also log them in.
-        authResponse = await supabase.auth.signUp({ email, password });
-      } else {
-        authResponse = await supabase.auth.signInWithPassword({ email, password });
+      // We now use fetch to talk to our own backend, which then talks to Supabase.
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.detail || 'An authentication error occurred.');
       }
 
-      if (authResponse.error) throw authResponse.error;
-
-      // Handle a successful sign-up OR sign-in by redirecting.
       alert("Success! Redirecting to your dashboard...");
-      window.location.href = '/dashboard'; // We will build this page next
+      window.location.href = '/dashboard';
 
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
