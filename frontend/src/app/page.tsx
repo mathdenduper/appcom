@@ -128,10 +128,13 @@ const Demo = () => {
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
-  // --- THIS IS THE CORRECTED CONNECTION LOGIC ---
+  // --- THIS IS THE SMART CONNECTION LOGIC ---
   useEffect(() => {
-    // This now ONLY uses the /api path, forcing it to use the Caddy reverse proxy.
-    fetch('/api')
+    // In production on Vercel, this will use your live Render URL.
+    // In development in Codespaces, it will be empty and default to '/api'.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
+    
+    fetch(apiUrl)
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -142,8 +145,8 @@ export default function Home() {
         setMessage(data.message);
       })
       .catch(error => {
-        console.error("Failed to fetch from API via proxy:", error);
-        setMessage("Failed to connect. This is the final attempt.");
+        console.error("Failed to fetch from API:", error);
+        setMessage("Failed to connect. Please ensure all servers are running.");
       });
   }, []);
 
