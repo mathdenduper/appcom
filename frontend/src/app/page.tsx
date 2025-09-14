@@ -1,29 +1,10 @@
 'use client'; 
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-// Header Component (Your Code)
-const Header = () => {
-  return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-black bg-opacity-30 backdrop-blur-lg border-b border-gray-800">
-      <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <div className="text-2xl font-bold text-white">
-          StudyAI
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className="text-gray-300 hover:text-white transition-colors">
-            Sign In
-          </button>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-            Sign Up
-          </button>
-        </div>
-      </nav>
-    </header>
-  );
-};
+// Your Header component is now in layout.tsx
 
-// Typewriter Animation Component (Your Code)
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
     const [charIndex, setCharIndex] = useState(0);
@@ -70,11 +51,12 @@ const Typewriter = ({ words }: { words: string[] }) => {
     );
 };
 
-
-// Hero Section Component (Your Code)
 const Hero = () => {
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center text-center pt-20">
+    // THIS IS THE CORRECTED PART
+    // We calculate the height of the hero section to be the full viewport height (100vh)
+    // minus 5rem (80px), which is the approximate height of your header.
+    <div style={{ minHeight: 'calc(100vh)' }} className="flex flex-col justify-center items-center text-center px-6">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-tight">
         Meet StudyAI
       </h1>
@@ -83,9 +65,9 @@ const Hero = () => {
         <Typewriter words={['subject', 'lecture', 'exam', 'topic']} />
       </p>
       <div className="mt-10 flex justify-center items-center gap-4">
-        <button className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+        <Link href="/signup" className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
           Get Started - It's Free
-        </button>
+        </Link>
         <a href="#ai-preview" className="bg-transparent border-2 border-gray-700 hover:border-purple-600 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors">
           See how it works
         </a>
@@ -94,7 +76,6 @@ const Hero = () => {
   );
 };
 
-// AI Demo Section Component (Your Code)
 const Demo = () => {
     return (
         <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
@@ -128,39 +109,27 @@ const Demo = () => {
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
-  // --- THIS IS THE SMART CONNECTION LOGIC ---
   useEffect(() => {
-    // In production on Vercel, this will use your live Render URL.
-    // In development in Codespaces, it will be empty and default to '/api'.
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
-    
+    const apiUrl = '/api'; 
     fetch(apiUrl)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        setMessage(data.message);
-      })
+      .then(response => response.json())
+      .then(data => setMessage(data.message))
       .catch(error => {
-        console.error("Failed to fetch from API:", error);
-        setMessage("Failed to connect. Please ensure all servers are running.");
+        console.error("Failed to fetch from API via proxy:", error);
+        setMessage("Failed to connect.");
       });
   }, []);
 
   return (
     <div className="bg-background text-white">
-      <Header />
-      <main className="container mx-auto px-6">
+      {/* The main container is now simpler */}
+      <div className="container mx-auto px-6">
         <Hero />
         <Demo />
-        {/* This is the temporary connection status message */}
         <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
             <p>Connection Status: {message}</p>
         </footer>
-      </main>
+      </div>
     </div>
   );
 }
