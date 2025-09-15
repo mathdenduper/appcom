@@ -61,6 +61,8 @@ export default function UploaderPage() {
     if (file) formData.append('file', file);
     if (text) formData.append('text', text);
 
+    // --- THIS IS THE FINAL, SMART URL LOGIC ---
+    // In production, this uses your live Render URL. In dev, it uses the Caddy proxy.
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const apiUrl = `${baseUrl}/api/process-notes`;
 
@@ -76,8 +78,6 @@ export default function UploaderPage() {
         throw new Error(result.detail || 'An unknown error occurred during processing.');
       }
       
-      // --- THIS IS THE CORRECTED PART ---
-      // On success, redirect to the new "Play" page with the study set ID.
       router.push(`/play/${result.study_set_id}`);
 
     } catch (err: any) {

@@ -5,12 +5,14 @@
 /.pnp
 .pnp.js
 
+# environmental variables
+/backend/.env
+
 # Build artifacts
 /frontend/.next/
 /frontend/out/
 
-# Local environment files (VERY IMPORTANT)
-/frontend/.env.local
+/frontend/.env.local/
 
 # Log files
 npm-debug.log*
