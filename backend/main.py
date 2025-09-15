@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form, APIRouter
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from supabase_client import supabase
@@ -12,8 +12,11 @@ from groq import Groq
 load_dotenv()
 app = FastAPI()
 
-# This is the final, robust CORS configuration.
-origins = ["*"] 
+# This is the final, robust CORS configuration. It trusts your live site.
+origins = [
+    "https://appcom-tau.vercel.app",
+    "*" 
+] 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -22,43 +25,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- This is the new, professional way to structure the API ---
-# It tells the server that all of our "doors" live under the /api prefix.
-api_router = APIRouter(prefix="/api")
-
 # --- AI Helper Function (Your working code) ---
 def generate_study_items_from_ai(text: str):
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not found in environment.")
-
     client = Groq(api_key=api_key)
-    
     word_count = len(text.split())
     num_items = max(3, min(15, word_count // 150))
-    
     system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object."
     user_prompt = f"Please generate {num_items} question and answer pairs from the following text. Format your response as a JSON object with a single key 'study_items' which contains a list of objects, where each object has a 'question' key and an 'answer' key. Text: {text[:3000]}"
-
     try:
         chat_completion = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            model="llama-3.1-8b-instant",
-            temperature=0.3,
-            max_tokens=2048,
-            response_format={"type": "json_object"},
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            model="llama-3.1-8b-instant", temperature=0.3, max_tokens=2048, response_format={"type": "json_object"}
         )
-        
         response_content = chat_completion.choices[0].message.content
         parsed_json = json.loads(response_content)
-        
         study_items = parsed_json.get("study_items")
         if not isinstance(study_items, list):
-            raise HTTPException(status_code=500, detail="AI did not return a valid list of study items in its JSON response.")
-
+            raise HTTPException(status_code=500, detail="AI did not return a valid list.")
         return study_items
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request failed: {str(e)}")
@@ -69,12 +55,12 @@ class UserCredentials(BaseModel):
     email: EmailStr
     password: str
 
-# --- API Endpoints (now correctly prefixed) ---
-@api_router.get("/")
+# --- API Endpoints (All at the top level, NO /api prefix) ---
+@app.get("/")
 def read_root():
-    return {"message": "Welcome to the StudyAI API! [V-FINAL]"}
+    return {"message": "Welcome to the StudyAI API! [FINAL]"}
 
-@api_router.post("/signup")
+@app.post("/signup")
 def sign_up(credentials: UserCredentials):
     try:
         res = supabase.auth.sign_up({"email": credentials.email, "password": credentials.password})
@@ -82,7 +68,7 @@ def sign_up(credentials: UserCredentials):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.post("/login")
+@app.post("/login")
 def sign_in(credentials: UserCredentials):
     try:
         res = supabase.auth.sign_in_with_password({"email": credentials.email, "password": credentials.password})
@@ -90,12 +76,9 @@ def sign_in(credentials: UserCredentials):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@api_router.post("/process-notes")
+@app.post("/process-notes")
 async def process_notes(
-    title: str = Form(...),
-    user_id: str = Form(...),
-    text: str = Form(None),
-    file: UploadFile = File(None)
+    title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
 ):
     extracted_text = ""
     if file and file.size > 0:
@@ -131,7 +114,7 @@ async def process_notes(
 
     return {"message": "Study set generated and saved successfully!", "study_set_id": new_set_id}
 
-@api_router.get("/study-set/{set_id}")
+@app.get("/study-set/{set_id}")
 def get_study_set(set_id: str):
     try:
         set_res = supabase.table("study_sets").select("*").eq("id", set_id).single().execute()
@@ -143,6 +126,3 @@ def get_study_set(set_id: str):
         return {"study_set": set_res.data, "study_items": items_res.data or []}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# This line "activates" our new router.
-app.include_router(api_router)
