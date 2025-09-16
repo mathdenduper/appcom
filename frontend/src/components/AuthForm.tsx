@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '../supabaseClient'; // We still use our client
+import { supabase } from '../supabaseClient'; // We use our standard, working Supabase client
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -21,41 +21,46 @@ export default function AuthForm({ mode }: AuthFormProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
-    // This is the new, professional PKCE flow.
-    // We send the user to Supabase, and Supabase sends them back
-    // to our /auth/callback route.
-    if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
+    try {
+      if (mode === 'signup') {
+        // --- THIS IS THE CRITICAL FIX ---
+        // We get the current website's address.
+        const redirectTo = window.location.origin;
+
+        // We now pass this address directly to Supabase when signing up.
+        // This is the correct way to handle redirects with the standard library.
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+            },
+            emailRedirectTo: redirectTo, // This tells Supabase where to send the user back
           },
-          // Supabase will now use the /auth/callback route we created
-        }
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      } else {
+        });
+        if (error) throw error;
         setSuccessMessage("Success! Please check your email to confirm your account.");
-        setLoading(false);
+
+      } else {
+        // The login process remains simple and direct.
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        // On success, we redirect to the dashboard.
+        window.location.href = '/dashboard';
       }
-    } else {
-      // The sign-in flow is also updated.
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-      // On success, Supabase's helpers will automatically handle the session
-      // and the redirect will be managed by our callback route.
+
+    } catch (err: any) {
+      setError(err.message || 'An error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
-
+  
+  // This part of the code correctly shows the "Check your inbox" message after signup.
   if (successMessage) {
     return (
         <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
