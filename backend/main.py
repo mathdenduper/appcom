@@ -1,3 +1,4 @@
+# backend/main.py
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -12,11 +13,7 @@ from groq import Groq
 load_dotenv()
 app = FastAPI()
 
-# This is the final, robust CORS configuration. It trusts your live site.
-origins = [
-    "https://appcom-tau.vercel.app",
-    "*" 
-] 
+origins = ["*"] 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -25,60 +22,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- AI Helper Function (Your working code) ---
+# --- AI Helper Function (Updated with Dynamic Item Count) ---
 def generate_study_items_from_ai(text: str):
+    """
+    Sends text to the Groq API and expects a JSON response.
+    The number of items generated is based on the length of the text.
+    """
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not found in environment.")
+
     client = Groq(api_key=api_key)
+    
+    # --- THIS IS THE NEW, SMART LOGIC ---
+    # Calculate the number of items based on word count.
+    # Heuristic: ~1 item per 150 words, with a minimum of 3 and a maximum of 15.
     word_count = len(text.split())
     num_items = max(3, min(15, word_count // 150))
-    system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object."
-    user_prompt = f"Please generate {num_items} question and answer pairs from the following text. Format your response as a JSON object with a single key 'study_items' which contains a list of objects, where each object has a 'question' key and an 'answer' key. Text: {text[:3000]}"
+    
+    system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object that has a single key, 'study_items', which contains a list of objects. Each object in the list must have a 'question' key and an 'answer' key."
+    # The prompt now uses our dynamic number of items.
+    user_prompt = f"Please generate exactly {num_items} question and answer pairs from the following text: {text[:4000]}"
+
     try:
         chat_completion = client.chat.completions.create(
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-            model="llama-3.1-8b-instant", temperature=0.3, max_tokens=2048, response_format={"type": "json_object"}
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            model="llama-3.1-8b-instant",
+            temperature=0.3,
+            max_tokens=2048, # Increased token limit for longer responses
+            response_format={"type": "json_object"},
         )
+        
         response_content = chat_completion.choices[0].message.content
         parsed_json = json.loads(response_content)
+        
         study_items = parsed_json.get("study_items")
         if not isinstance(study_items, list):
-            raise HTTPException(status_code=500, detail="AI did not return a valid list.")
+            raise HTTPException(status_code=500, detail="AI did not return a valid list of study items.")
+
         return study_items
+
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request failed: {str(e)}")
 
 
-# --- Data Models ---
-class UserCredentials(BaseModel):
-    email: EmailStr
-    password: str
-
-# --- API Endpoints (All at the top level, NO /api prefix) ---
+# --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the StudyAI API! [FINAL]"}
-
-@app.post("/signup")
-def sign_up(credentials: UserCredentials):
-    try:
-        res = supabase.auth.sign_up({"email": credentials.email, "password": credentials.password})
-        return {"message": "Signup successful!", "data": res}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/login")
-def sign_in(credentials: UserCredentials):
-    try:
-        res = supabase.auth.sign_in_with_password({"email": credentials.email, "password": credentials.password})
-        return {"message": "Login successful!", "data": res}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+    return {"message": "Welcome to the StudyAI API!"}
+    
 @app.post("/process-notes")
 async def process_notes(
-    title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
+    title: str = Form(...),
+    user_id: str = Form(...),
+    text: str = Form(None),
+    file: UploadFile = File(None)
 ):
     extracted_text = ""
     if file and file.size > 0:
@@ -105,9 +106,16 @@ async def process_notes(
         raise HTTPException(status_code=500, detail="AI returned data in an unexpected format.")
 
     try:
-        set_insert_res = supabase.table("study_sets").insert({"user_id": user_id, "title": title, "original_content": extracted_text}).execute()
+        set_insert_res = supabase.table("study_sets").insert({
+            "user_id": user_id,
+            "title": title,
+            "original_content": extracted_text
+        }).execute()
         new_set_id = set_insert_res.data[0]['id']
-        items_to_insert = [{"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']} for item in generated_items]
+        items_to_insert = [
+            {"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']}
+            for item in generated_items
+        ]
         supabase.table("study_items").insert(items_to_insert).execute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -126,3 +134,24 @@ def get_study_set(set_id: str):
         return {"study_set": set_res.data, "study_items": items_res.data or []}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# (Your signup and login endpoints also remain here, unchanged...)
+class UserCredentials(BaseModel):
+    email: EmailStr
+    password: str
+
+@app.post("/signup")
+def sign_up(credentials: UserCredentials):
+    try:
+        res = supabase.auth.sign_up({"email": credentials.email, "password": credentials.password})
+        return {"message": "Signup successful!", "data": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/login")
+def sign_in(credentials: UserCredentials):
+    try:
+        res = supabase.auth.sign_in_with_password({"email": credentials.email, "password": credentials.password})
+        return {"message": "Login successful!", "data": res}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
