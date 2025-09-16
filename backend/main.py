@@ -185,20 +185,34 @@ def generate_quiz(set_id: str):
             raise e
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
-# --- THIS IS THE NEW ENDPOINT FOR THE CR SYSTEM ---
 @app.post("/award-cr")
 def award_cr(payload: AwardCrPayload):
-    """
-    Awards a specified number of CR points to a user.
-    This uses a database function for security and performance.
-    """
     try:
-        # We call a special function in our database called 'increment_cr_score'
         supabase.rpc('increment_cr_score', {
             'user_id_to_update': payload.user_id,
             'points_to_add': payload.points
         }).execute()
-
         return {"message": f"Successfully awarded {payload.points} CR to user."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
+# --- THIS IS THE NEW ENDPOINT FOR THE LEADERBOARD ---
+@app.get("/leaderboard")
+def get_leaderboard():
+    """
+    Fetches the top 10 user profiles, ordered by their CR score.
+    """
+    try:
+        # We query the 'profiles' table, select the necessary columns,
+        # order by cr_score in descending order, and limit to 10 results.
+        res = supabase.table("profiles").select("first_name, last_name, cr_score").order("cr_score", desc=True).limit(10).execute()
+        
+        # We add a 'rank' to each user profile for easy display on the front-end
+        leaderboard_data = []
+        for i, profile in enumerate(res.data):
+            profile['rank'] = i + 1
+            leaderboard_data.append(profile)
+            
+        return leaderboard_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

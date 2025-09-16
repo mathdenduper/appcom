@@ -1,8 +1,3 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/play/[setId]/page": "app/play/[setId]/page.js",
-  "/signup/page": "app/signup/page.js",
-  "/uploader/page": "app/uploader/page.js",
-  "/play/[setId]/quiz/page": "app/play/[setId]/quiz/page.js",
-  "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }
