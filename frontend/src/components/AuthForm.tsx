@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '../supabaseClient'; // We use our standard, working Supabase client
+import { supabase } from '../supabaseClient';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -15,43 +15,38 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
+      let authResponse;
       if (mode === 'signup') {
-        // --- THIS IS THE CRITICAL FIX ---
-        // We get the current website's address.
-        const redirectTo = window.location.origin;
-
-        // We now pass this address directly to Supabase when signing up.
-        // This is the correct way to handle redirects with the standard library.
-        const { error } = await supabase.auth.signUp({
-          email,
+        // --- THIS IS THE CORRECTED PART ---
+        // We sign up the user. Because email confirmation is off in Supabase,
+        // this action will also automatically log them in.
+        authResponse = await supabase.auth.signUp({ 
+          email, 
           password,
           options: {
             data: {
               first_name: firstName,
               last_name: lastName,
-            },
-            emailRedirectTo: redirectTo, // This tells Supabase where to send the user back
-          },
+            }
+          }
         });
-        if (error) throw error;
-        setSuccessMessage("Success! Please check your email to confirm your account.");
-
       } else {
-        // The login process remains simple and direct.
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        // On success, we redirect to the dashboard.
-        window.location.href = '/dashboard';
+        // The login process remains the same.
+        authResponse = await supabase.auth.signInWithPassword({ email, password });
       }
+
+      // Check for any errors from Supabase
+      if (authResponse.error) throw authResponse.error;
+
+      // After a successful signup OR signin, we now redirect immediately.
+      window.location.href = '/dashboard';
 
     } catch (err: any) {
       setError(err.message || 'An error occurred.');
@@ -59,19 +54,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
       setLoading(false);
     }
   };
-  
-  // This part of the code correctly shows the "Check your inbox" message after signup.
-  if (successMessage) {
-    return (
-        <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">Check Your Inbox!</h2>
-            <p className="text-gray-300">{successMessage}</p>
-            <Link href="/" className="text-purple-400 hover:underline mt-6 inline-block">
-                Back to Home
-            </Link>
-        </div>
-    );
-  }
 
   return (
     <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
@@ -85,15 +67,48 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {mode === 'signup' && (
           <div className="flex gap-4">
-            <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
-            <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
+            <input
+              type="text"
+              placeholder="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+              required
+            />
           </div>
         )}
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
-        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
-        <button type="submit" disabled={loading} className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
+        >
           {loading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Create account')}
         </button>
+        
         {error && <p className="text-red-400 text-center mt-4">{error}</p>}
       </form>
 
