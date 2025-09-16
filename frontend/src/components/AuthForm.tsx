@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { getApiUrl } from '../lib'; // Import our new helper function
+import { getApiUrl } from '../lib'; // Import our new helper
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -20,28 +20,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    // --- THIS IS THE UPDATED PART ---
-    // We determine which "door" on our backend to knock on.
+    
     const endpointPath = mode === 'signin' ? '/login' : '/signup';
-    // We use our smart helper to get the full, correct URL.
     const finalUrl = getApiUrl(endpointPath);
 
     try {
-      // Instead of talking to Supabase directly, we now talk to our own secure backend.
       const response = await fetch(finalUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // We send all the necessary user details.
         body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName }),
       });
 
       const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.detail || 'An authentication error occurred.');
-      }
+      if (!response.ok) throw new Error(result.detail || 'An authentication error occurred.');
       
-      // After a successful action, redirect to the dashboard.
       window.location.href = '/dashboard';
 
     } catch (err: any) {
@@ -59,55 +51,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <p className="text-gray-400 text-center mb-8">
         {mode === 'signin' ? 'Sign in to continue.' : 'Get started in seconds.'}
       </p>
-      
       <form onSubmit={handleSubmit} className="space-y-6">
         {mode === 'signup' && (
           <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="First name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
-              required
-            />
+            <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
+            <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
           </div>
         )}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
-        >
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500" required />
+        <button type="submit" disabled={loading} className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500">
           {loading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Create account')}
         </button>
-        
         {error && <p className="text-red-400 text-center mt-4">{error}</p>}
       </form>
-
       <div className="text-center mt-6">
         <p className="text-gray-400">
           {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}

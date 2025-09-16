@@ -1,29 +1,22 @@
 'use client'; 
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getApiUrl } from '../lib'; // Import our new helper function
+import { getApiUrl } from '../lib'; // Import our new helper
 
-// Typewriter Animation Component (Your Code)
+// Your amazing UI components (Typewriter, Hero, Demo) are here.
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
     const [charIndex, setCharIndex] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [currentText, setCurrentText] = useState('');
-    
     const typingSpeed = 100;
     const deletingSpeed = 50;
     const pauseDelay = 2000;
-
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
-
         if (isPaused) {
-            timeoutId = setTimeout(() => {
-                setIsPaused(false);
-                setIsDeleting(true);
-            }, pauseDelay);
+            timeoutId = setTimeout(() => { setIsPaused(false); setIsDeleting(true); }, pauseDelay);
         } else if (isDeleting) {
             if (charIndex > 0) {
                 timeoutId = setTimeout(() => setCharIndex(charIndex - 1), deletingSpeed);
@@ -38,11 +31,9 @@ const Typewriter = ({ words }: { words: string[] }) => {
                 setIsPaused(true);
             }
         }
-
         setCurrentText(words[wordIndex].substring(0, charIndex));
         return () => clearTimeout(timeoutId);
     }, [charIndex, wordIndex, isDeleting, isPaused, words]);
-
     return (
         <span className="text-purple-400">
             {currentText}
@@ -50,8 +41,6 @@ const Typewriter = ({ words }: { words: string[] }) => {
         </span>
     );
 };
-
-// Hero Section Component (Your Code)
 const Hero = () => {
   return (
     <div className="h-screen flex flex-col justify-center items-center text-center">
@@ -73,8 +62,6 @@ const Hero = () => {
     </div>
   );
 };
-
-// AI Demo Section Component (Your Code)
 const Demo = () => {
     return (
         <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
@@ -82,7 +69,6 @@ const Demo = () => {
                 <h2 className="text-4xl font-bold text-white">Try the AI Instantly</h2>
                 <p className="text-lg text-gray-400 mt-4">Paste some of your notes below to see a live preview.</p>
             </div>
-            
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-start">
                 <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
                     <textarea 
@@ -104,28 +90,21 @@ const Demo = () => {
     );
 };
 
-
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
-  // --- THIS IS THE UPDATED PART ---
   useEffect(() => {
-    // We now use our smart helper to get the correct URL for the root endpoint.
-    const apiUrl = getApiUrl('/'); 
+    const apiUrl = getApiUrl('/'); // Use the helper for the root check
     
     fetch(apiUrl)
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         return response.json();
       })
-      .then(data => {
-        setMessage(data.message);
-      })
+      .then(data => setMessage(data.message))
       .catch(error => {
         console.error("Failed to fetch from API:", error);
-        setMessage("Failed to connect. Please ensure all three servers are running.");
+        setMessage("Failed to connect.");
       });
   }, []);
 

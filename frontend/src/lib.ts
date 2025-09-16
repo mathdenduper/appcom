@@ -1,27 +1,22 @@
 // frontend/src/lib.ts
 
-// This is our new, foolproof helper function with added debugging logs.
+// This is our new, foolproof helper function to build the correct API URL
+// for both development and production environments.
 export const getApiUrl = (path: string): string => {
-    // --- DEBUGGING LOGS START ---
-    console.log("--- [lib.ts] Running getApiUrl ---");
-    console.log("[lib.ts] Received path:", path);
-
-    // This will show us the value from your Vercel environment variables in production.
+    // In production on Vercel, this will be your live Render URL.
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''; 
-    console.log("[lib.ts] Found baseUrl:", baseUrl || "'' (empty string is correct for development)");
-    // --- DEBUGGING LOGS END ---
     
+    // In development in Codespaces, it will be an empty string,
+    // and we need to use the Caddy proxy path.
     let finalUrl: string;
     if (!baseUrl) {
-        // This is the path for your development server (Codespaces)
-        finalUrl = `/api${path}`;
+        finalUrl = `/api${path}`; // e.g., returns '/api/study-set/some-id'
     } else {
-        // This is the path for your live production server (Vercel/Render)
-        // This logic now correctly handles any trailing slashes.
-        finalUrl = baseUrl.endsWith('/') ? `${baseUrl.slice(0, -1)}${path}` : `${baseUrl}${path}`;
+        // In production, we construct the full URL.
+        finalUrl = `${baseUrl}${path}`; // e.g., https://appcom.onrender.com/study-set/some-id
     }
 
-    // --- FINAL DEBUGGING LOG ---
-    console.log("[lib.ts] Constructed finalUrl:", finalUrl);
-    return finalUrl;
+    // THIS IS YOUR FOOLPROOF FIX:
+    // It replaces any occurrence of '//' with '/', but ignores 'https://'.
+    return finalUrl.replace(/([^:]\/)\/+/g, "$1");
 };

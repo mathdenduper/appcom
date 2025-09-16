@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '../../../supabaseClient';
 import Link from 'next/link';
+import { getApiUrl } from '../../../lib'; // Import our new, foolproof helper
 
-// Define the structure of our data
+// Define the structure of our data for type safety
 interface StudyItem {
   id: string;
   question: string;
@@ -35,8 +35,9 @@ export default function PlayPage() {
       setLoading(true);
       setError(null);
       
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const apiUrl = `${baseUrl}/api/study-set/${setId}`;
+      // --- THIS IS THE UPDATED PART ---
+      // We now use our smart helper to get the correct URL for the study set endpoint.
+      const apiUrl = getApiUrl(`/study-set/${setId}`);
 
       try {
         const response = await fetch(apiUrl);
@@ -93,13 +94,11 @@ export default function PlayPage() {
           Card {currentItemIndex + 1} of {studyItems.length}
         </p>
 
-        {/* --- THIS IS THE UPDATED FLASHCARD --- */}
         <div 
             className="w-full h-80 perspective-1000 cursor-pointer"
             onClick={() => setIsFlipped(!isFlipped)}
         >
             <div 
-                // This now uses our new 'rotate-y-cw-180' class for the flip
                 className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-cw-180' : ''}`}
             >
                 {/* Front of the card (Question) */}
@@ -107,13 +106,13 @@ export default function PlayPage() {
                     <p className="text-2xl">{currentItem.question}</p>
                 </div>
                 {/* Back of the card (Answer) */}
-                {/* This also uses 'rotate-y-cw-180' to correctly orient the back */}
                 <div className="absolute w-full h-full backface-hidden bg-purple-900 border border-purple-700 rounded-2xl flex items-center justify-center p-6 text-center rotate-y-cw-180">
                     <p className="text-xl">{currentItem.answer}</p>
                 </div>
             </div>
         </div>
         
+        {/* Navigation buttons */}
         <div className="mt-8 flex justify-between items-center">
             <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">&larr; Back to Dashboard</Link>
             <button 
