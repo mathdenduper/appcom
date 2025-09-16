@@ -1,3 +1,7 @@
 {
-  "/play/[setId]/page": "app/play/[setId]/page.js"
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/play/[setId]/page": "app/play/[setId]/page.js",
+  "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js"
 }

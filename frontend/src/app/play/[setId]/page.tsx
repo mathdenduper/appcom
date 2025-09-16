@@ -3,40 +3,35 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getApiUrl } from '../../../lib'; // Import our new, foolproof helper
+import { getApiUrl } from '../../../lib';
 
-// Define the structure of our data for type safety
-interface StudyItem {
-  id: string;
-  question: string;
-  answer: string;
-}
+// Define the structure of our data
 interface StudySet {
   id: string;
   title: string;
 }
 
-export default function PlayPage() {
+// Reusable Icon Components
+const FlashcardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg>;
+const QuizIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>;
+const TimedGameIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+
+
+export default function GameSelectPage() {
   const [studySet, setStudySet] = useState<StudySet | null>(null);
-  const [studyItems, setStudyItems] = useState<StudyItem[]>([]);
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const params = useParams();
-  const router = useRouter();
   const setId = params.setId as string;
 
   useEffect(() => {
     if (!setId) return;
 
-    const fetchStudySet = async () => {
+    const fetchStudySetInfo = async () => {
       setLoading(true);
       setError(null);
       
-      // --- THIS IS THE UPDATED PART ---
-      // We now use our smart helper to get the correct URL for the study set endpoint.
       const apiUrl = getApiUrl(`/study-set/${setId}`);
 
       try {
@@ -47,7 +42,6 @@ export default function PlayPage() {
         }
         const data = await response.json();
         setStudySet(data.study_set);
-        setStudyItems(data.study_items);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -55,72 +49,58 @@ export default function PlayPage() {
       }
     };
 
-    fetchStudySet();
+    fetchStudySetInfo();
   }, [setId]);
 
-  const handleNextCard = () => {
-    if (isFlipped) {
-        setIsFlipped(false);
-        setTimeout(() => {
-            setCurrentItemIndex((prevIndex) => (prevIndex + 1) % studyItems.length);
-        }, 300);
-    } else {
-        setCurrentItemIndex((prevIndex) => (prevIndex + 1) % studyItems.length);
-    }
-  };
   
   if (loading) {
-    return <p className="text-center text-white pt-40">Loading study set...</p>;
+    return <p className="text-center text-white pt-40">Loading study hub...</p>;
   }
   if (error) {
     return <p className="text-center text-red-400 pt-40">Error: {error}</p>;
   }
-  if (!studySet || studyItems.length === 0) {
+  if (!studySet) {
     return (
         <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center pt-24 px-4">
-            <p className="text-center text-white">This study set is empty or could not be found.</p>
+            <p className="text-center text-white">This study set could not be found.</p>
             <Link href="/dashboard" className="text-purple-400 hover:underline mt-4">&larr; Back to Dashboard</Link>
         </div>
     );
   }
 
-  const currentItem = studyItems[currentItemIndex];
-
   return (
     <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center pt-24 px-4">
-      <div className="w-full max-w-2xl">
-        <h1 className="text-3xl font-bold text-center mb-4">{studySet.title}</h1>
-        <p className="text-gray-400 text-center mb-8">
-          Card {currentItemIndex + 1} of {studyItems.length}
-        </p>
+      <div className="w-full max-w-2xl text-center">
+        <h1 className="text-4xl font-bold mb-2">{studySet.title}</h1>
+        <p className="text-lg text-gray-400 mb-10">Choose a way to study</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Flashcards Game Mode */}
+          <Link href={`/play/${setId}/flashcards`} className="bg-gray-900 border border-gray-800 p-6 rounded-2xl hover:border-purple-600 hover:scale-105 transition-transform flex flex-col items-center">
+            <FlashcardIcon />
+            <h3 className="text-xl font-semibold mt-4">Flashcards</h3>
+            <p className="text-gray-400 text-sm mt-2">Review your notes with classic cards.</p>
+          </Link>
+          
+          {/* Quiz Game Mode (Placeholder) */}
+          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl flex flex-col items-center opacity-50 cursor-not-allowed">
+            <QuizIcon />
+            <h3 className="text-xl font-semibold mt-4">Quiz (MCQ)</h3>
+            <p className="text-gray-400 text-sm mt-2">Test your knowledge with multiple choice.</p>
+            <span className="text-xs text-purple-400 mt-4">(Coming Soon)</span>
+          </div>
 
-        <div 
-            className="w-full h-80 perspective-1000 cursor-pointer"
-            onClick={() => setIsFlipped(!isFlipped)}
-        >
-            <div 
-                className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${isFlipped ? 'rotate-y-cw-180' : ''}`}
-            >
-                {/* Front of the card (Question) */}
-                <div className="absolute w-full h-full backface-hidden bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center p-6 text-center">
-                    <p className="text-2xl">{currentItem.question}</p>
-                </div>
-                {/* Back of the card (Answer) */}
-                <div className="absolute w-full h-full backface-hidden bg-purple-900 border border-purple-700 rounded-2xl flex items-center justify-center p-6 text-center rotate-y-cw-180">
-                    <p className="text-xl">{currentItem.answer}</p>
-                </div>
-            </div>
+          {/* Timed Game Mode (Placeholder) */}
+          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl flex flex-col items-center opacity-50 cursor-not-allowed">
+            <TimedGameIcon />
+            <h3 className="text-xl font-semibold mt-4">Timed Game</h3>
+            <p className="text-gray-400 text-sm mt-2">Race against the clock to answer quickly.</p>
+            <span className="text-xs text-purple-400 mt-4">(Coming Soon)</span>
+          </div>
         </div>
         
-        {/* Navigation buttons */}
-        <div className="mt-8 flex justify-between items-center">
+        <div className="mt-12">
             <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">&larr; Back to Dashboard</Link>
-            <button 
-                onClick={handleNextCard}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg"
-            >
-                Next Card
-            </button>
         </div>
       </div>
     </div>

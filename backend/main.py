@@ -13,6 +13,7 @@ from groq import Groq
 load_dotenv()
 app = FastAPI()
 
+# Your final, robust CORS configuration
 origins = ["*"] 
 app.add_middleware(
     CORSMiddleware,
@@ -22,28 +23,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- AI Helper Function (Updated with Dynamic Item Count) ---
+# --- AI Helper Function (Your working code) ---
 def generate_study_items_from_ai(text: str):
-    """
-    Sends text to the Groq API and expects a JSON response.
-    The number of items generated is based on the length of the text.
-    """
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not found in environment.")
-
     client = Groq(api_key=api_key)
-    
-    # --- THIS IS THE NEW, SMART LOGIC ---
-    # Calculate the number of items based on word count.
-    # Heuristic: ~1 item per 150 words, with a minimum of 3 and a maximum of 15.
     word_count = len(text.split())
     num_items = max(3, min(15, word_count // 150))
-    
-    system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object that has a single key, 'study_items', which contains a list of objects. Each object in the list must have a 'question' key and an 'answer' key."
-    # The prompt now uses our dynamic number of items.
-    user_prompt = f"Please generate exactly {num_items} question and answer pairs from the following text: {text[:4000]}"
-
+    system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object."
+    user_prompt = f"Please generate {num_items} question and answer pairs from the following text. Format your response as a JSON object with a single key 'study_items' which contains a list of objects, where each object has a 'question' key and an 'answer' key. Text: {text[:3000]}"
     try:
         chat_completion = client.chat.completions.create(
             messages=[
@@ -52,93 +41,27 @@ def generate_study_items_from_ai(text: str):
             ],
             model="llama-3.1-8b-instant",
             temperature=0.3,
-            max_tokens=2048, # Increased token limit for longer responses
+            max_tokens=2048,
             response_format={"type": "json_object"},
         )
-        
         response_content = chat_completion.choices[0].message.content
         parsed_json = json.loads(response_content)
-        
         study_items = parsed_json.get("study_items")
         if not isinstance(study_items, list):
-            raise HTTPException(status_code=500, detail="AI did not return a valid list of study items.")
-
+            raise HTTPException(status_code=500, detail="AI did not return a valid list of study items in its JSON response.")
         return study_items
-
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request failed: {str(e)}")
 
+# --- Data Models ---
+class UserCredentials(BaseModel):
+    email: EmailStr
+    password: str
 
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the StudyAI API!"}
-    
-@app.post("/process-notes")
-async def process_notes(
-    title: str = Form(...),
-    user_id: str = Form(...),
-    text: str = Form(None),
-    file: UploadFile = File(None)
-):
-    extracted_text = ""
-    if file and file.size > 0:
-        if file.content_type == 'application/pdf':
-            try:
-                pdf_content = await file.read()
-                pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_content))
-                extracted_text = "".join(page.extract_text() for page in pdf_reader.pages if page.extract_text())
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
-        else:
-            text_content = await file.read()
-            extracted_text = text_content.decode('utf-8')
-    elif text:
-        extracted_text = text
-    else:
-        raise HTTPException(status_code=400, detail="No content provided.")
-
-    if len(extracted_text.strip()) < 50:
-         raise HTTPException(status_code=400, detail="The provided text is too short.")
-
-    generated_items = generate_study_items_from_ai(extracted_text)
-    if not isinstance(generated_items, list) or not all("question" in item and "answer" in item for item in generated_items):
-        raise HTTPException(status_code=500, detail="AI returned data in an unexpected format.")
-
-    try:
-        set_insert_res = supabase.table("study_sets").insert({
-            "user_id": user_id,
-            "title": title,
-            "original_content": extracted_text
-        }).execute()
-        new_set_id = set_insert_res.data[0]['id']
-        items_to_insert = [
-            {"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']}
-            for item in generated_items
-        ]
-        supabase.table("study_items").insert(items_to_insert).execute()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
-    return {"message": "Study set generated and saved successfully!", "study_set_id": new_set_id}
-
-@app.get("/study-set/{set_id}")
-def get_study_set(set_id: str):
-    try:
-        set_res = supabase.table("study_sets").select("*").eq("id", set_id).single().execute()
-        if not set_res.data:
-            raise HTTPException(status_code=404, detail="Study set not found.")
-        
-        items_res = supabase.table("study_items").select("*").eq("set_id", set_id).execute()
-        
-        return {"study_set": set_res.data, "study_items": items_res.data or []}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# (Your signup and login endpoints also remain here, unchanged...)
-class UserCredentials(BaseModel):
-    email: EmailStr
-    password: str
+    return {"message": "Welcome to the StudyAI API! [FINAL]"}
 
 @app.post("/signup")
 def sign_up(credentials: UserCredentials):
@@ -155,3 +78,63 @@ def sign_in(credentials: UserCredentials):
         return {"message": "Login successful!", "data": res}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/process-notes")
+async def process_notes(
+    title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
+):
+    # ... (Your existing process-notes logic remains here)
+    extracted_text = ""
+    if file and file.size > 0:
+        if file.content_type == 'application/pdf':
+            try:
+                pdf_content = await file.read()
+                pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_content))
+                extracted_text = "".join(page.extract_text() for page in pdf_reader.pages if page.extract_text())
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
+        else:
+            text_content = await file.read()
+            extracted_text = text_content.decode('utf-8')
+    elif text:
+        extracted_text = text
+    else:
+        raise HTTPException(status_code=400, detail="No content provided.")
+    if len(extracted_text.strip()) < 50:
+         raise HTTPException(status_code=400, detail="The provided text is too short.")
+    generated_items = generate_study_items_from_ai(extracted_text)
+    if not isinstance(generated_items, list) or not all("question" in item and "answer" in item for item in generated_items):
+        raise HTTPException(status_code=500, detail="AI returned data in an unexpected format.")
+    try:
+        set_insert_res = supabase.table("study_sets").insert({"user_id": user_id, "title": title, "original_content": extracted_text}).execute()
+        new_set_id = set_insert_res.data[0]['id']
+        items_to_insert = [{"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']} for item in generated_items]
+        supabase.table("study_items").insert(items_to_insert).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    return {"message": "Study set generated and saved successfully!", "study_set_id": new_set_id}
+
+@app.get("/study-set/{set_id}")
+def get_study_set(set_id: str):
+    # ... (Your existing get-study-set logic remains here)
+    try:
+        set_res = supabase.table("study_sets").select("*").eq("id", set_id).single().execute()
+        if not set_res.data:
+            raise HTTPException(status_code=404, detail="Study set not found.")
+        items_res = supabase.table("study_items").select("*").eq("set_id", set_id).execute()
+        return {"study_set": set_res.data, "study_items": items_res.data or []}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- THIS IS THE NEW ENDPOINT FOR THE DASHBOARD ---
+@app.get("/my-study-sets/{user_id}")
+def get_my_study_sets(user_id: str):
+    """
+    Fetches all study sets belonging to a specific user.
+    """
+    try:
+        # We query the 'study_sets' table and filter by the user's ID
+        res = supabase.table("study_sets").select("id, title, created_at").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
