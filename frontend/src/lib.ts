@@ -1,21 +1,27 @@
 // frontend/src/lib.ts
 
-// This is our final, foolproof helper function to build the correct API URL
-// for both development and production environments.
+// This is our new, foolproof helper function with added debugging logs.
 export const getApiUrl = (path: string): string => {
-    // In production on Vercel, this will be your live Render URL
-    // from the environment variables. The trailing slash is important.
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL; 
+    // --- DEBUGGING LOGS START ---
+    console.log("--- [lib.ts] Running getApiUrl ---");
+    console.log("[lib.ts] Received path:", path);
+
+    // This will show us the value from your Vercel environment variables in production.
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''; 
+    console.log("[lib.ts] Found baseUrl:", baseUrl || "'' (empty string is correct for development)");
+    // --- DEBUGGING LOGS END ---
     
-    // In development in Codespaces, the baseUrl will be undefined,
-    // and we need to use the Caddy proxy path.
+    let finalUrl: string;
     if (!baseUrl) {
-        return `/api${path}`; // e.g., returns '/api/process-notes'
+        // This is the path for your development server (Codespaces)
+        finalUrl = `/api${path}`;
+    } else {
+        // This is the path for your live production server (Vercel/Render)
+        // This logic now correctly handles any trailing slashes.
+        finalUrl = baseUrl.endsWith('/') ? `${baseUrl.slice(0, -1)}${path}` : `${baseUrl}${path}`;
     }
 
-    // In production, we construct the full URL.
-    // This logic now correctly handles the slashes to prevent the double slash bug.
-    const finalUrl = baseUrl.endsWith('/') ? `${baseUrl.slice(0, -1)}${path}` : `${baseUrl}${path}`;
-    
-    return finalUrl; // e.g., https://appcom.onrender.com/process-notes
+    // --- FINAL DEBUGGING LOG ---
+    console.log("[lib.ts] Constructed finalUrl:", finalUrl);
+    return finalUrl;
 };
