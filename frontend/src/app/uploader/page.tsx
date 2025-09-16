@@ -4,25 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
+import { getApiUrl } from '../../lib'; // Import our new, central helper function
 
-// This is a new helper function to build the correct API URL for both dev and prod
-const getApiUrl = (path: string): string => {
-    // In production on Vercel, this will be your live Render URL.
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''; 
-    
-    // In development in Codespaces, it will be an empty string,
-    // and we need to use the Caddy proxy path.
-    if (!baseUrl) {
-        return `/api${path}`; // e.g., returns '/api/process-notes'
-    }
-
-    // In production, we construct the full URL, safely handling any slashes.
-    // This prevents the double slash bug.
-    return new URL(path, baseUrl).toString(); // e.g., https://appcom.onrender.com/process-notes
-};
-
-
-const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
+const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
 
 export default function UploaderPage() {
   const [user, setUser] = useState<User | null>(null);

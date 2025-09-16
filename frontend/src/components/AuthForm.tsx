@@ -1,16 +1,14 @@
-// frontend/src/components/AuthForm.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '../supabaseClient';
+import { getApiUrl } from '../lib'; // Import our new helper function
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
-  // NEW: State for first and last name
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,30 +21,31 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     setError(null);
 
-    try {
-      if (mode === 'signup') {
-        // We now include the user's name in the sign-up request
-        const { error } = await supabase.auth.signUp({ 
-          email, 
-          password,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            }
-          }
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+    // --- THIS IS THE UPDATED PART ---
+    // We determine which "door" on our backend to knock on.
+    const endpointPath = mode === 'signin' ? '/login' : '/signup';
+    // We use our smart helper to get the full, correct URL.
+    const finalUrl = getApiUrl(endpointPath);
 
-      // After a successful signup or signin, redirect to the dashboard
+    try {
+      // Instead of talking to Supabase directly, we now talk to our own secure backend.
+      const response = await fetch(finalUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // We send all the necessary user details.
+        body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.detail || 'An authentication error occurred.');
+      }
+      
+      // After a successful action, redirect to the dashboard.
       window.location.href = '/dashboard';
 
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -62,7 +61,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* NEW: Conditional fields for first and last name */}
         {mode === 'signup' && (
           <div className="flex gap-4">
             <input

@@ -1,7 +1,7 @@
 {
   "/page": "app/page.js",
+  "/play/[setId]/page": "app/play/[setId]/page.js",
   "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
   "/uploader/page": "app/uploader/page.js",
-  "/play/[setId]/page": "app/play/[setId]/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }

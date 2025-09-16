@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getApiUrl } from '../lib'; // Import our new helper function
 
-// NOTE: The incorrect placeholder components that were here have been removed.
-// The full, correct components are defined below.
-
+// Typewriter Animation Component (Your Code)
 const Typewriter = ({ words }: { words: string[] }) => {
     const [wordIndex, setWordIndex] = useState(0);
     const [charIndex, setCharIndex] = useState(0);
@@ -52,6 +51,7 @@ const Typewriter = ({ words }: { words: string[] }) => {
     );
 };
 
+// Hero Section Component (Your Code)
 const Hero = () => {
   return (
     <div className="h-screen flex flex-col justify-center items-center text-center">
@@ -74,6 +74,7 @@ const Hero = () => {
   );
 };
 
+// AI Demo Section Component (Your Code)
 const Demo = () => {
     return (
         <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
@@ -107,11 +108,10 @@ const Demo = () => {
 export default function Home() {
   const [message, setMessage] = useState('Connecting to the server...');
 
-  // --- THIS IS THE FINAL, SMART CONNECTION LOGIC ---
+  // --- THIS IS THE UPDATED PART ---
   useEffect(() => {
-    // In production, this uses your live Render URL from Vercel's environment variables.
-    // In development (Codespaces), it defaults to the relative path '/api'.
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api'; 
+    // We now use our smart helper to get the correct URL for the root endpoint.
+    const apiUrl = getApiUrl('/'); 
     
     fetch(apiUrl)
       .then(response => {
@@ -130,7 +130,6 @@ export default function Home() {
   }, []);
 
   return (
-    // This is the corrected return statement
     <div className="container mx-auto px-6">
       <Hero />
       <Demo />
