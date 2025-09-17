@@ -1,0 +1,55 @@
+ALGORITHM processNotes()
+BEGIN
+    INPUT strTitle
+    INPUT fileNotes
+    INPUT strPastedNotes
+    INPUT strUserId
+
+    strExtractedText ← NULL
+    strErrorMessage ← NULL
+
+    IF fileNotes EXISTS THEN
+        strExtractedText ← fileNotes.readAsText()
+    ELSE IF strPastedNotes EXISTS THEN
+        strExtractedText ← strPastedNotes
+    ENDIF
+
+    IF strExtractedText = NULL OR length(strExtractedText) < 50 THEN
+        strErrorMessage ← "The provided text is too short. Please provide more content."
+    ENDIF
+
+    IF strErrorMessage = NULL THEN
+        TRY
+            strApiKey ← GET EnvironmentVariable("GROQ_API_KEY")
+
+            arrWords ← SPLIT strExtractedText by spaces
+            intWordCount ← length of arrWords
+            intNumItems ← intWordCount / 150
+
+            strSystemPrompt ← "You are a helpful study assistant. You must respond with a valid JSON object."
+            strUserPrompt ← "Generate exactly " + intNumItems + " question/answer pairs from the text. Format your response as a JSON object with a key 'study_items' containing a list of objects, where each object has a 'question' key and an 'answer' key. Text: " + strExtractedText
+
+            objResponse ← CALL GroqAPI WITH strApiKey, strSystemPrompt, strUserPrompt
+
+            strJsonContent ← objResponse.getGeneratedText()
+            objParsedJson ← CONVERT strJsonContent to a structured JSON object
+            arrGeneratedItems ← objParsedJson.get("study_items")
+
+            IF arrGeneratedItems is not a list OR arrGeneratedItems is empty THEN
+                strErrorMessage ← "The AI failed to generate study items from the provided text."
+            ELSE
+                strNewSetId ← CALL Database.saveNewStudySet WITH strUserId, strTitle, strExtractedText, arrGeneratedItems
+
+                IF strNewSetId = NULL THEN
+                    strErrorMessage ← "There was a problem saving your study set to the database."
+                ELSE
+                    RETURN { success: TRUE, study_set_id: strNewSetId }
+                ENDIF
+            ENDIF
+        END TRY
+    ENDIF
+
+    IF strErrorMessage != NULL THEN
+        RETURN { success: FALSE, error: strErrorMessage }
+    ENDIF
+END

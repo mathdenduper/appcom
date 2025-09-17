@@ -1,0 +1,40 @@
+ALGORITHM userSignUp() 
+BEGIN 
+    INPUT strFirstName 
+    INPUT strLastName 
+    INPUT strEmail 
+    INPUT strPassword 
+    INPUT strConfirmPassword
+
+    strErrorMessage ← NULL
+
+    IF strFirstName is empty OR strLastName is empty OR strEmail is empty OR strPassword is empty THEN 
+        strErrorMessage ← "Please ensure all fields are filled out." 
+    ELSE IF length(strPassword) < 8 THEN 
+        strErrorMessage ← "Password must be at least 8 characters long." 
+    ELSE IF length(strPassword) > 20 THEN 
+        strErrorMessage ← "Password cannot exceed 20 characters."
+    ELSE IF strEmail DOES NOT CONTAIN "@" OR strEmail DOES NOT CONTAIN "." THEN 
+        strErrorMessage ← "Please enter a valid email address."
+    ELSE IF strPassword != strConfirmPassword THEN
+        strErrorMessage ← "Passwords do not match."
+    ENDIF
+
+    IF strErrorMessage = NULL THEN 
+        TRY 
+            objResponse ← CALL Supabase.auth.signUp WITH strEmail, strPassword
+
+            IF objResponse.error EXISTS THEN 
+                strErrorMessage ← objResponse.error.message
+            ELSE 
+                DISPLAY "Account successfully created!" 
+            ENDIF 
+        CATCH
+            strErrorMessage ← "An unexpected error occurred. Please try again."
+        END TRY 
+    ENDIF 
+
+    IF strErrorMessage != NULL THEN 
+        DISPLAY strErrorMessage 
+    ENDIF 
+END

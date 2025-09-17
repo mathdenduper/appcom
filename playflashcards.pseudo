@@ -1,0 +1,43 @@
+ALGORITHM playFlashcards()
+BEGIN
+    INPUT strSetId
+    INPUT struserId
+
+    intScore ← 0
+
+    strTitle ← CALL Database.get(title FROM study_sets WHERE id = strSetId)
+    arrFlashcards ← CALL Database.get(all items FROM study_items WHERE set_id = strSetId)
+
+    intCurrentCardIndex ← 0
+    boolIsFlipped ← FALSE
+
+    LOOP
+        objCurrentCard ← arrFlashcards[intCurrentCardIndex]
+
+        DISPLAY objStudySetData.title
+        DISPLAY "Card " + (intCurrentCardIndex + 1) + " of " + length(arrFlashcards)
+        
+        IF boolIsFlipped = FALSE THEN
+            DISPLAY objCurrentCard.question
+        ELSE
+            DISPLAY objCurrentCard.answer
+        ENDIF
+
+        WAIT for user action
+
+        IF user clicks the card THEN
+            boolIsFlipped ← NOT boolIsFlipped
+            intScore = intScore + 2
+        ELSE IF user clicks "Next" button THEN
+            intCurrentCardIndex ← intCurrentCardIndex + 1
+            boolIsFlipped ← FALSE
+
+        ELSE IF user clicks "Previous" button THEN
+            intCurrentCardIndex ← intCurrentCardIndex - 1
+            boolIsFlipped ← FALSE
+        ENDIF
+
+    END LOOP UNTIL user clicks "Finish" or "Back"
+
+    CALL awardCrPoints(strUserId, intScore)
+END

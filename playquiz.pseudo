@@ -1,0 +1,42 @@
+ALGORITHM playQuiz()
+BEGIN
+    INPUT strSetId
+    INPUT strUserId
+    
+    arrQuizQuestions ← CALL our_API.get("/generate-quiz/" + strSetId)
+
+    intCurrentQuestionIndex ← 0
+    intScore ← 0
+    boolIsFinished ← FALSE
+
+    WHILE boolIsFinished = FALSE
+        objCurrentQuestion ← arrQuizQuestions[intCurrentQuestionIndex]
+
+        DISPLAY objCurrentQuestion.question
+        DISPLAY the four options from objCurrentQuestion.options as clickable buttons
+
+        //Wait for the user to select an answer
+        INPUT strSelectedAnswer
+
+        IF strSelectedAnswer = objCurrentQuestion.correct_answer THEN
+            intScore ← intScore + 1
+            DISPLAY "Correct!"
+        ELSE
+            DISPLAY "Incorrect."
+        ENDIF
+
+        WAIT for user to click the "Next" button
+        IF intCurrentQuestionIndex < length(arrQuizQuestions) - 1 THEN
+            intCurrentQuestionIndex ← intCurrentQuestionIndex + 1
+        ELSE
+            boolIsFinished ← TRUE
+        ENDIF
+    END WHILE
+
+    intPointsToAward ← intScore * 10
+    CALL awardCrPoints(strUserId, intPointsToAward)
+
+    DISPLAY "Quiz Complete!"
+    DISPLAY "Your final score: " + intScore + " / " + length(arrQuizQuestions)
+    DISPLAY "Back to Dashboard" button
+END

@@ -1,0 +1,22 @@
+ALGORITHM awardCrPoints()
+BEGIN
+    INPUT strUserId
+    INPUT intPointsToAdd
+
+    IF strUserId is empty OR intPointsToAdd <= 0 THEN
+        RETURN
+    ENDIF
+
+    TRY
+        objUserProfile ← CALL Database.get(profile FOR user strUserId)
+        intCurrentScore ← objUserProfile.cr_score
+
+        intNewScore ← intCurrentScore + intPointsToAdd
+
+        CALL Database.update(profiles table SET cr_score = intNewScore WHERE id = strUserId)
+
+        RETURN { success: TRUE }
+    CATCH
+        RETURN { success: FALSE, error: "A database error occurred while awarding points." }
+    END TRY
+END

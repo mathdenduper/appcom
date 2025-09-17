@@ -1,0 +1,28 @@
+ALGORITHM fetchAndDisplayLeaderboard()
+BEGIN
+    arrLeaderboardData ← NULL
+    strErrorMessage ← NULL
+
+    TRY
+        arrLeaderboardData ← CALL our_API.get("/leaderboard")
+
+        IF arrLeaderboardData is not a list THEN
+            strErrorMessage ← "Leaderboard data is in an invalid format."
+        ENDIF
+
+    CATCH
+        strErrorMessage ← "A database error occurred while awarding points."
+    END TRY
+
+    IF strErrorMessage != NULL THEN
+        DISPLAY strErrorMessage
+    ELSE IF arrLeaderboardData is empty THEN
+        DISPLAY "No leaderboard data available yet."
+    ELSE
+        DISPLAY "CR Leaderboard" as a title
+        LOOP through each objUser in arrLeaderboardData
+            strFullName ← objUser.first_name + " " + objUser.last_name
+            DISPLAY objUser.rank + ": " + strFullName + " - " + objUser.cr_score + " CR"
+        END LOOP
+    ENDIF
+END
