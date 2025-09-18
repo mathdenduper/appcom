@@ -23,8 +23,14 @@ BEGIN
             strApiKey ← GET EnvironmentVariable("GROQ_API_KEY")
 
             arrWords ← SPLIT strExtractedText by spaces
-            intWordCount ← length of arrWords
+            intWordCount ← length(arrWords)
             intNumItems ← intWordCount / 150
+
+            IF intNumItems < 3 THEN
+                intNUmItems = 3
+            ELSE IF inNumItems > 20 THEN
+                intNumItems = 20
+            ENDIF 
 
             strSystemPrompt ← "You are a helpful study assistant. You must respond with a valid JSON object."
             strUserPrompt ← "Generate exactly " + intNumItems + " question/answer pairs from the text. Format your response as a JSON object with a key 'study_items' containing a list of objects, where each object has a 'question' key and an 'answer' key. Text: " + strExtractedText

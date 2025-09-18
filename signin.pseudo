@@ -5,7 +5,7 @@ BEGIN
 
     strErrorMessage ← NULL
 
-    IF strEmail is empty OR strPassword is empty THEN
+    IF (strEmail is empty OR strPassword is empty) THEN
         strErrorMessage ← "Please ensure all fields are filled out."
     ELSE
         objUserRecord ← Database.get(user FOR strEmail)
@@ -19,6 +19,7 @@ BEGIN
                 strErrorMessage ← "Incorrect password."
             ELSE 
                 DISPLAY "Sign-in successful!"
+                REDIRECT to dashboard
             ENDIF
         ENDIF
     ENDIF

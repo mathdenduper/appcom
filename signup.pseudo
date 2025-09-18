@@ -16,13 +16,14 @@ BEGIN
         strErrorMessage ← "Password cannot exceed 20 characters."
     ELSE IF strEmail DOES NOT CONTAIN "@" OR strEmail DOES NOT CONTAIN "." THEN 
         strErrorMessage ← "Please enter a valid email address."
+    
     ELSE IF strPassword != strConfirmPassword THEN
         strErrorMessage ← "Passwords do not match."
     ENDIF
 
     IF strErrorMessage = NULL THEN 
         TRY 
-            objResponse ← CALL Supabase.auth.signUp WITH strEmail, strPassword
+            objResponse ← CALL Database.signUp WITH strEmail, strPassword
 
             IF objResponse.error EXISTS THEN 
                 strErrorMessage ← objResponse.error.message
