@@ -14,25 +14,30 @@ BEGIN
         strErrorMessage ← "Password must be at least 8 characters long." 
     ELSE IF length(strPassword) > 20 THEN 
         strErrorMessage ← "Password cannot exceed 20 characters."
-    ELSE IF strEmail DOES NOT CONTAIN "@" OR strEmail DOES NOT CONTAIN "." THEN 
+    ELSE IF strEmail DOES NOT CONTAIN "@" OR strEmail DOES NOT CONTAIN "." THEN
         strErrorMessage ← "Please enter a valid email address."
-    
     ELSE IF strPassword != strConfirmPassword THEN
         strErrorMessage ← "Passwords do not match."
-    ENDIF
+    ELSE
+        objExistingUser ← Database.get(user FOR strEmail)
 
-    IF strErrorMessage = NULL THEN 
-        TRY 
-            objResponse ← CALL Database.signUp WITH strEmail, strPassword
+        IF objExistingUser != NULL THEN
+            strErrorMessage ← "An account with this email already exists. Please sign in."
+        ELSE
+            IF strErrorMessage = NULL THEN 
+                TRY 
+                    objResponse ← CALL Database.signUp WITH strEmail, strPassword
 
-            IF objResponse.error EXISTS THEN 
-                strErrorMessage ← objResponse.error.message
-            ELSE 
-                DISPLAY "Account successfully created!" 
-            ENDIF 
-        CATCH
-            strErrorMessage ← "An unexpected error occurred. Please try again."
-        END TRY 
+                    IF objResponse.error EXISTS THEN 
+                       strErrorMessage ← objResponse.error.message
+                    ELSE 
+                        DISPLAY "Account successfully created!" 
+                    ENDIF 
+                CATCH
+                    strErrorMessage ← "An unexpected error occurred. Please try again."
+                END TRY 
+            ENDIF
+        ENDIF
     ENDIF 
 
     IF strErrorMessage != NULL THEN 

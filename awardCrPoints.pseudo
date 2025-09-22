@@ -15,8 +15,12 @@ BEGIN
 
         CALL Database.update(profiles table SET cr_score = intNewScore WHERE id = strUserId)
 
-        RETURN { success: TRUE }
+        RETURN
     CATCH
-        RETURN { success: FALSE, error: "A database error occurred while awarding points." }
+        strErrorMessage ← "A database error occurred while awarding points."
     END TRY
+
+    IF strErrorMessage != NULL THEN
+        DISPLAY strErrorMessage
+    ENDIF
 END

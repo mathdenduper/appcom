@@ -3,7 +3,7 @@ BEGIN
     INPUT strSetId
     INPUT strUserId
     
-    arrQuizQuestions ← CALL our_API.get("/generate-quiz/" + strSetId)
+    arrQuizQuestions ← CALL Database.get("/generate-quiz/" + strSetId)
 
     intCurrentQuestionIndex ← 0
     intScore ← 0

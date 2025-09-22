@@ -4,7 +4,7 @@ BEGIN
     strErrorMessage ← NULL
 
     TRY
-        arrLeaderboardData ← CALL our_API.get("/leaderboard")
+        arrLeaderboardData ← CALL Database.get("/leaderboard")
 
         IF arrLeaderboardData is not a list THEN
             strErrorMessage ← "Leaderboard data is in an invalid format."

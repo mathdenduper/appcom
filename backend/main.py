@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 import random
+from typing import Optional
 
 load_dotenv()
 app = FastAPI()
@@ -87,19 +88,24 @@ def generate_quiz_from_ai(text: str):
         raise HTTPException(status_code=503, detail=f"Groq API request for quiz failed: {str(e)}")
 
 
-# --- Data Models (Updated) ---
+# --- Data Models ---
 class UserCredentials(BaseModel):
     email: EmailStr
     password: str
 
+# THIS IS THE CORRECTED, FLEXIBLE PAYLOAD MODEL
 class AwardCrPayload(BaseModel):
     user_id: str
-    points: int
+    points_to_add: int
+    set_id: Optional[str] = None
+    score: Optional[int] = None
+    total_questions: Optional[int] = None
+
 
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the StudyAI API! [FINAL]"}
+    return {"message": "Welcome to the StudyAI API! [FINAL AND WORKING]"}
 
 @app.post("/signup")
 def sign_up(credentials: UserCredentials):
@@ -185,34 +191,53 @@ def generate_quiz(set_id: str):
             raise e
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
+# --- THIS IS THE CORRECTED AND UNIFIED CR SYSTEM ENDPOINT ---
 @app.post("/award-cr")
 def award_cr(payload: AwardCrPayload):
+    """
+    Awards CR points, logs the transaction, and saves the quiz attempt if applicable.
+    """
     try:
+        # Step 1: If it was a full quiz attempt, save the result.
+        if payload.total_questions is not None and payload.total_questions > 0:
+            supabase.table("quiz_attempts").insert({
+                'user_id': payload.user_id,
+                'set_id': payload.set_id,
+                'score': payload.score,
+                'total_questions': payload.total_questions,
+            }).execute()
+
+        # Step 2: If any points were earned, log the transaction for the leaderboard.
+        if payload.points_to_add > 0:
+            supabase.table("cr_transactions").insert({
+                'user_id': payload.user_id,
+                'points_earned': payload.points_to_add
+            }).execute()
+        
+        # Step 3: Always call the database function to update the user's total score.
         supabase.rpc('increment_cr_score', {
             'user_id_to_update': payload.user_id,
-            'points_to_add': payload.points
+            'points_to_add': payload.points_to_add
         }).execute()
-        return {"message": f"Successfully awarded {payload.points} CR to user."}
+
+        return {"message": "CR awarded successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error in award_cr: {str(e)}")
         
-# --- THIS IS THE NEW ENDPOINT FOR THE LEADERBOARD ---
-@app.get("/leaderboard")
-def get_leaderboard():
-    """
-    Fetches the top 10 user profiles, ordered by their CR score.
-    """
+@app.get("/get-results/{user_id}")
+def get_results(user_id: str):
     try:
-        # We query the 'profiles' table, select the necessary columns,
-        # order by cr_score in descending order, and limit to 10 results.
-        res = supabase.table("profiles").select("first_name, last_name, cr_score").order("cr_score", desc=True).limit(10).execute()
-        
-        # We add a 'rank' to each user profile for easy display on the front-end
-        leaderboard_data = []
-        for i, profile in enumerate(res.data):
-            profile['rank'] = i + 1
-            leaderboard_data.append(profile)
-            
-        return leaderboard_data
+        res = supabase.table("quiz_attempts").select("*, study_sets(title)").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/leaderboard")
+def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str] = 'UTC'):
+    try:
+        res = supabase.rpc('get_leaderboard', {'timespan_filter': timespan, 'p_timezone': timezone}).execute()
+        if res.data is None:
+            return []
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error in get_leaderboard: {str(e)}")

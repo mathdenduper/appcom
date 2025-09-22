@@ -1,13 +1,16 @@
 # Caddyfile (Final Working Version)
 :8080 {
     # This is the new, correct instruction.
-    # It tells Caddy to strip the /api prefix before forwarding.
+    # It tells Caddy to find any request that starts with /api,
+    # then strip that /api prefix before forwarding the rest of the
+    # address to your back-end server.
     route /api* {
         uri strip_prefix /api
         reverse_proxy localhost:8000
     }
 
-    # This part remains the same.
+    # This part remains the same. It sends all other requests
+    # to your front-end server.
     route {
         reverse_proxy localhost:3000
     }

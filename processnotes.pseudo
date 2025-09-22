@@ -37,7 +37,11 @@ BEGIN
 
             objResponse ← CALL GroqAPI WITH strApiKey, strSystemPrompt, strUserPrompt
 
-            strJsonContent ← objResponse.getGeneratedText()
+            arrChoices ← objResponse.get("choices")
+            objFirstChoice ← arrChoices[0]
+            objMessage ← objFirstChoice.get("message")
+            strJsonContent ← objMessage.get("content")
+
             objParsedJson ← CONVERT strJsonContent to a structured JSON object
             arrGeneratedItems ← objParsedJson.get("study_items")
 
@@ -49,13 +53,13 @@ BEGIN
                 IF strNewSetId = NULL THEN
                     strErrorMessage ← "There was a problem saving your study set to the database."
                 ELSE
-                    RETURN { success: TRUE, study_set_id: strNewSetId }
+                    RETURN strNewSetId
                 ENDIF
             ENDIF
         END TRY
     ENDIF
 
     IF strErrorMessage != NULL THEN
-        RETURN { success: FALSE, error: strErrorMessage }
+        RETURN strErrorMessage
     ENDIF
 END

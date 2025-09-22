@@ -26,16 +26,15 @@ export default function FlashcardsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // --- NEW: State for tracking CR rewards ---
   const [seenCards, setSeenCards] = useState<Set<string>>(new Set());
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false); // The new "safety lock"
 
   const params = useParams();
   const router = useRouter();
   const setId = params.setId as string;
 
-  // This effect runs once to get the current user
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -44,10 +43,8 @@ export default function FlashcardsPage() {
     getUser();
   }, []);
   
-  // This effect fetches the study set data
   useEffect(() => {
     if (!setId) return;
-
     const fetchStudySet = async () => {
       setLoading(true);
       setError(null);
@@ -70,57 +67,63 @@ export default function FlashcardsPage() {
     fetchStudySet();
   }, [setId]);
 
-  // --- NEW: Function to award CR points ---
   const awardPoints = async (points: number) => {
-    if (!user) return; // Can't award points if we don't know who the user is
+    if (!user) return;
     try {
       const apiUrl = getApiUrl('/award-cr');
       await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, points: points }),
+        body: JSON.stringify({ 
+            user_id: user.id, 
+            set_id: setId,
+            score: null,
+            total_questions: null,
+            points_to_add: points 
+        }),
       });
-      console.log(`Awarded ${points} CR to user ${user.id}`);
     } catch (error) {
       console.error("Failed to award CR points:", error);
     }
   };
 
-  // --- NEW: Effect to award points for seeing a card ---
   useEffect(() => {
-    if (studyItems.length > 0) {
+    if (studyItems.length > 0 && user) {
       const currentCardId = studyItems[currentItemIndex].id;
       if (!seenCards.has(currentCardId)) {
-        awardPoints(1); // Award 1 CR for seeing a new card
+        awardPoints(1);
         setSeenCards(new Set(seenCards).add(currentCardId));
       }
     }
-  }, [currentItemIndex, studyItems]);
+  }, [currentItemIndex, studyItems, user]);
 
 
   const handleFlipCard = () => {
     const currentCardId = studyItems[currentItemIndex].id;
-    // We only award points when flipping from question to answer
     if (!isFlipped && !flippedCards.has(currentCardId)) {
-      awardPoints(2); // Award 2 CR for flipping a card for the first time
+      awardPoints(2);
       setFlippedCards(new Set(flippedCards).add(currentCardId));
     }
     setIsFlipped(!isFlipped);
   };
 
   const handlePreviousCard = () => {
-    if (currentItemIndex > 0) {
-        setIsFlipped(false);
-        setTimeout(() => {
-            setCurrentItemIndex((prevIndex) => prevIndex - 1);
-        }, 300);
-    }
+    if (isNavigating || currentItemIndex === 0) return;
+    setIsNavigating(true);
+    setIsFlipped(false);
+    setTimeout(() => {
+        setCurrentItemIndex((prevIndex) => prevIndex - 1);
+        setIsNavigating(false);
+    }, 300);
   };
 
   const handleNextCard = () => {
+    if (isNavigating || currentItemIndex >= studyItems.length - 1) return;
+    setIsNavigating(true);
     setIsFlipped(false);
     setTimeout(() => {
-      setCurrentItemIndex((prevIndex) => (prevIndex + 1));
+      setCurrentItemIndex((prevIndex) => prevIndex + 1);
+      setIsNavigating(false);
     }, 300);
   };
   
@@ -139,6 +142,15 @@ export default function FlashcardsPage() {
     );
   }
 
+  // THIS IS THE CRITICAL FIX for the front-end crash
+  if (!studyItems[currentItemIndex]) {
+      return (
+          <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center pt-24 px-4">
+              <p className="text-center text-white">Loading card...</p>
+          </div>
+      );
+  }
+
   const currentItem = studyItems[currentItemIndex];
   const isFirstCard = currentItemIndex === 0;
   const isLastCard = currentItemIndex === studyItems.length - 1;
@@ -147,7 +159,7 @@ export default function FlashcardsPage() {
     <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl self-start mb-4">
           <Link href={`/play/${setId}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Back to Study Hub
           </Link>
       </div>
@@ -177,20 +189,21 @@ export default function FlashcardsPage() {
         <div className="mt-8 flex justify-between items-center">
             <button 
                 onClick={handlePreviousCard}
-                disabled={isFirstCard}
-                className={`bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors ${isFirstCard ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={isFirstCard || isNavigating}
+                className={`bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors ${(isFirstCard || isNavigating) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
                 Previous
             </button>
             
             {isLastCard ? (
-                <Link href="/dashboard" className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg text-lg">
+                <Link href="/dashboard" className={`bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg text-lg ${isNavigating ? 'opacity-50 pointer-events-none' : ''}`}>
                     Finish
                 </Link>
             ) : (
                 <button 
                     onClick={handleNextCard}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg"
+                    disabled={isNavigating}
+                    className={`bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                     Next Card
                 </button>

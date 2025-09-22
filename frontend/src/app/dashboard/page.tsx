@@ -17,7 +17,6 @@ interface Profile {
     id: string;
     cr_score: number;
 }
-// NEW: Data structure for our live leaderboard data
 interface LeaderboardEntry {
     rank: number;
     first_name: string | null;
@@ -73,7 +72,7 @@ const ProfileMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) =
     );
 };
 
-// --- NEW Helper function for Ordinal Suffixes ---
+// --- Helper function for Ordinal Suffixes ---
 const getOrdinalSuffix = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
     const v = n % 100;
@@ -87,6 +86,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [timeSpan, setTimeSpan] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'all_time'>('all_time');
   const router = useRouter();
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function DashboardPage() {
           const [profileResponse, setsResponse, leaderboardResponse] = await Promise.all([
             supabase.from('profiles').select('id, cr_score').eq('id', session.user.id).single(),
             fetch(getApiUrl(`/my-study-sets/${session.user.id}`)),
-            fetch(getApiUrl('/leaderboard'))
+            fetch(getApiUrl(`/leaderboard?timespan=${timeSpan}`))
           ]);
 
           if (profileResponse.error && profileResponse.error.code !== 'PGRST116') {
@@ -131,7 +131,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, [router]);
+  }, [router, timeSpan]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -173,6 +173,7 @@ export default function DashboardPage() {
             <div className="space-y-3 overflow-y-auto pr-4 flex-1 bg-gray-900 border border-gray-800 rounded-lg p-4">
               {studySets.length > 0 ? (
                 studySets.slice(0, 8).map(set => (
+                  // --- THIS IS THE CORRECTED LINK for the STUDY HUB ---
                   <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
                     <span>{set.title}</span>
                     <span className="text-gray-500">&gt;</span>
@@ -190,7 +191,16 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col min-h-0">
-            <h2 className="text-2xl font-bold mb-4 flex-shrink-0">CR Leaderboard</h2>
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 className="text-2xl font-bold">CR Leaderboard</h2>
+                <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
+                    <button onClick={() => setTimeSpan('daily')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'daily' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Daily</button>
+                    <button onClick={() => setTimeSpan('weekly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'weekly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Weekly</button>
+                    <button onClick={() => setTimeSpan('monthly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'monthly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Monthly</button>
+                    <button onClick={() => setTimeSpan('yearly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'yearly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Yearly</button>
+                    <button onClick={() => setTimeSpan('all_time')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'all_time' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>All Time</button>
+                </div>
+            </div>
             <div className="bg-gray-900 p-4 rounded-lg border border-gray-800 overflow-y-auto flex-1">
               {leaderboard.length > 0 ? (
                 leaderboard.map(entry => {
@@ -199,12 +209,12 @@ export default function DashboardPage() {
                     return (
                         <div key={entry.rank} className={`flex justify-between p-3 rounded-md ${isCurrentUser ? 'bg-purple-900 bg-opacity-50' : ''}`}>
                             <span>{entry.rank}{getOrdinalSuffix(entry.rank)}: {fullName || 'Anonymous'}</span>
-                            <span className="font-semibold">{entry.cr_score}Cr</span>
+                            <span className="font-semibold">{entry.cr_score}CR</span>
                         </div>
                     )
                 })
               ) : (
-                <p className="text-gray-400 text-center py-4">No leaderboard data available yet.</p>
+                <p className="text-gray-400 text-center py-4">No leaderboard data available for this period.</p>
               )}
             </div>
           </div>
@@ -213,8 +223,9 @@ export default function DashboardPage() {
       
       <div className="w-64 bg-gray-900 border-l border-gray-800 p-6 flex flex-col flex-shrink-0">
         <div className="space-y-4">
-            <Link href={studySets.length > 0 ? `/play/${studySets[0].id}` : '/uploader'} className="flex items-center justify-center gap-3 w-full p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
-            <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</button>
+            {/* --- THIS IS THE CORRECTED LINK for the PLAY BUTTON --- */}
+            <Link href="/sets" className="flex items-center justify-center gap-3 w-full p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
+            <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
             <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
             <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</button>
             <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
@@ -226,3 +237,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
