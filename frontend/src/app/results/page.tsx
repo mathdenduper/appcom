@@ -14,7 +14,7 @@ interface QuizAttempt {
   score: number;
   total_questions: number;
   set_id: string;
-  study_sets: {
+  study_sets: { // This comes from the database join
     title: string;
   };
 }
@@ -26,8 +26,9 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  // --- THIS IS THE UPDATED DATA FETCHING LOGIC ---
   useEffect(() => {
-    const checkUserAndFetchResults = async () => {
+    const fetchResultsData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
@@ -47,7 +48,15 @@ export default function ResultsPage() {
       }
       setLoading(false);
     };
-    checkUserAndFetchResults();
+
+    fetchResultsData();
+
+    // This professional trick refetches data when you navigate back to this browser tab
+    const handleFocus = () => fetchResultsData();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [router]);
 
   if (loading) {
@@ -64,7 +73,12 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-background text-white pt-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">My Results</h1>
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold">My Results</h1>
+            <Link href="/dashboard" className="text-purple-400 hover:underline">
+                &larr; Back to Dashboard
+            </Link>
+        </div>
         
         {attempts.length > 0 ? (
           <div className="space-y-4">
@@ -90,8 +104,8 @@ export default function ResultsPage() {
           <div className="text-center py-16 px-4 bg-gray-900 border border-gray-800 rounded-lg">
             <h2 className="text-2xl font-semibold">No Results Found</h2>
             <p className="text-gray-400 mt-2">You haven't completed any quizzes yet.</p>
-            <Link href="/dashboard" className="mt-6 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg">
-                Go to Dashboard
+            <Link href="/sets" className="mt-6 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg">
+                Play a Study Set
             </Link>
           </div>
         )}

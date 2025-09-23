@@ -1,3 +1,4 @@
+# backend/main.py
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -88,19 +89,17 @@ def generate_quiz_from_ai(text: str):
         raise HTTPException(status_code=503, detail=f"Groq API request for quiz failed: {str(e)}")
 
 
-# --- Data Models ---
+# --- Data Models (Updated) ---
 class UserCredentials(BaseModel):
     email: EmailStr
     password: str
 
-# THIS IS THE CORRECTED, FLEXIBLE PAYLOAD MODEL
-class AwardCrPayload(BaseModel):
+class QuizResultPayload(BaseModel):
     user_id: str
+    set_id: str
+    score: int
+    total_questions: int
     points_to_add: int
-    set_id: Optional[str] = None
-    score: Optional[int] = None
-    total_questions: Optional[int] = None
-
 
 # --- API Endpoints ---
 @app.get("/")
@@ -191,15 +190,16 @@ def generate_quiz(set_id: str):
             raise e
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
-# --- THIS IS THE CORRECTED AND UNIFIED CR SYSTEM ENDPOINT ---
-@app.post("/award-cr")
-def award_cr(payload: AwardCrPayload):
+# --- THIS IS THE RESTORED AND UPGRADED CR SYSTEM ENDPOINT ---
+@app.post("/log-quiz-attempt")
+def log_quiz_attempt(payload: QuizResultPayload):
     """
-    Awards CR points, logs the transaction, and saves the quiz attempt if applicable.
+    Logs a quiz attempt to the database, logs the transaction, 
+    and updates the user's total CR score.
     """
     try:
-        # Step 1: If it was a full quiz attempt, save the result.
-        if payload.total_questions is not None and payload.total_questions > 0:
+        # Step 1: Save the full quiz result to our new table.
+        if payload.total_questions > 0:
             supabase.table("quiz_attempts").insert({
                 'user_id': payload.user_id,
                 'set_id': payload.set_id,
@@ -207,37 +207,47 @@ def award_cr(payload: AwardCrPayload):
                 'total_questions': payload.total_questions,
             }).execute()
 
-        # Step 2: If any points were earned, log the transaction for the leaderboard.
+        # Step 2: If points were earned, log the transaction for the leaderboard.
         if payload.points_to_add > 0:
             supabase.table("cr_transactions").insert({
                 'user_id': payload.user_id,
                 'points_earned': payload.points_to_add
             }).execute()
         
-        # Step 3: Always call the database function to update the user's total score.
+        # Step 3: Call the database function to update the user's total score.
         supabase.rpc('increment_cr_score', {
             'user_id_to_update': payload.user_id,
             'points_to_add': payload.points_to_add
         }).execute()
 
-        return {"message": "CR awarded successfully."}
+        return {"message": "Quiz attempt logged and CR awarded successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error in award_cr: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
+# --- THIS IS THE RESTORED RESULTS PAGE ENDPOINT ---
 @app.get("/get-results/{user_id}")
 def get_results(user_id: str):
+    """
+    Fetches the full quiz history for a specific user, joining with the
+    study_sets table to get the title for each attempt.
+    """
     try:
+        # We now correctly join the tables to get the study set title
         res = supabase.table("quiz_attempts").select("*, study_sets(title)").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- THIS IS THE FINAL, "SMART" LEADERBOARD ENDPOINT ---
 @app.get("/leaderboard")
 def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str] = 'UTC'):
+    """
+    Fetches the top 10 user profiles, ordered by CR score within a specific timespan.
+    """
     try:
         res = supabase.rpc('get_leaderboard', {'timespan_filter': timespan, 'p_timezone': timezone}).execute()
         if res.data is None:
             return []
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error in get_leaderboard: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

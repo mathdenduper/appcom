@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getApiUrl } from '../../../../lib';
-import { supabase } from '../../../../supabaseClient'; // We need this to get the user ID
+import { supabase } from '../../../../supabaseClient';
+import type { User } from '@supabase/supabase-js';
 
 // --- Data Structures for the Quiz ---
 interface QuizQuestion {
@@ -21,15 +22,22 @@ export default function QuizPage() {
   const [isFinished, setIsFinished] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   
   const params = useParams();
   const setId = params.setId as string;
   const router = useRouter();
 
   useEffect(() => {
-    if (!setId) return;
+    const checkUserAndFetchQuiz = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        router.push('/login');
+        return; // Stop execution if no user
+      }
 
-    const fetchQuiz = async () => {
       setLoading(true);
       setError(null);
       const apiUrl = getApiUrl(`/generate-quiz/${setId}`);
@@ -47,8 +55,8 @@ export default function QuizPage() {
         setLoading(false);
       }
     };
-    fetchQuiz();
-  }, [setId]);
+    checkUserAndFetchQuiz();
+  }, [setId, router]);
 
   const handleAnswerSelect = (option: string) => {
     if (selectedAnswer) return;
@@ -63,27 +71,27 @@ export default function QuizPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
     } else {
-      // --- THIS IS THE NEW PART ---
-      // When the quiz is finished, we now await the CR points award.
-      const { data: { user } } = await supabase.auth.getUser();
+      // --- THIS IS THE RESTORED CR LOGIC ---
+      // When the quiz is finished, we log the attempt and award CR.
       if (user) {
-        const pointsToAward = score * 10; // e.g., 10 points per correct answer
-        if (pointsToAward > 0) {
-            try {
-                const apiUrl = getApiUrl('/award-cr');
-                // We now wait for this to finish before proceeding
-                await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user.id, points: pointsToAward }),
-                });
-            } catch (error) {
-                console.error("Failed to award CR points:", error);
-                // We don't block the user if this fails, just log the error.
-            }
+        const pointsToAward = score * 10; // 10 points per correct answer
+        try {
+          const apiUrl = getApiUrl('/log-quiz-attempt');
+          await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              user_id: user.id, 
+              set_id: setId,
+              score: score,
+              total_questions: questions.length,
+              points_to_add: pointsToAward 
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to log quiz attempt:", error);
         }
       }
-      // Only now do we mark the quiz as finished.
       setIsFinished(true);
     }
   };
@@ -136,49 +144,49 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl self-start mb-4">
-          <Link href={`/play/${setId}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              Back to Study Hub
-          </Link>
-      </div>
+        <div className="w-full max-w-2xl self-start mb-4">
+            <Link href={`/play/${setId}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Study Hub
+            </Link>
+        </div>
 
-      <div className="w-full max-w-2xl">
-          <p className="text-gray-400 text-center mb-4">Question {currentQuestionIndex + 1} of {questions.length}</p>
-          <h2 className="text-3xl font-bold text-center mb-8">{currentQuestion.question}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {currentQuestion.options.map((option, index) => {
-              const isCorrect = option === currentQuestion.correct_answer;
-              let buttonClass = "bg-gray-800 hover:bg-gray-700";
-              if (selectedAnswer) {
-                  if (isCorrect) {
-                      buttonClass = "bg-green-500 text-white";
-                  } else if (option === selectedAnswer) {
-                      buttonClass = "bg-red-500 text-white";
-                  }
-              }
-              return (
-              <button
-                  key={index}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={!!selectedAnswer}
-                  className={`p-4 rounded-lg text-left text-lg transition-colors duration-300 ${buttonClass}`}
-              >
-                  {option}
-              </button>
-              );
-          })}
-          </div>
+        <div className="w-full max-w-2xl">
+            <p className="text-gray-400 text-center mb-4">Question {currentQuestionIndex + 1} of {questions.length}</p>
+            <h2 className="text-3xl font-bold text-center mb-8">{currentQuestion.question}</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {currentQuestion.options.map((option, index) => {
+                const isCorrect = option === currentQuestion.correct_answer;
+                let buttonClass = "bg-gray-800 hover:bg-gray-700";
+                if (selectedAnswer) {
+                    if (isCorrect) {
+                        buttonClass = "bg-green-500 text-white";
+                    } else if (option === selectedAnswer) {
+                        buttonClass = "bg-red-500 text-white";
+                    }
+                }
+                return (
+                <button
+                    key={index}
+                    onClick={() => handleAnswerSelect(option)}
+                    disabled={!!selectedAnswer}
+                    className={`p-4 rounded-lg text-left text-lg transition-colors duration-300 ${buttonClass}`}
+                >
+                    {option}
+                </button>
+                );
+            })}
+            </div>
 
-          {selectedAnswer && (
-              <div className="text-center mt-8">
-                  <button onClick={handleNextQuestion} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg">
-                      {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
-                  </button>
-              </div>
-          )}
-      </div>
+            {selectedAnswer && (
+                <div className="text-center mt-8">
+                    <button onClick={handleNextQuestion} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg">
+                        {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+                    </button>
+                </div>
+            )}
+        </div>
     </div>
   );
 }
