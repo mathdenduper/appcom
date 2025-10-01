@@ -2,55 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  scroll-behavior: smooth;
+/*
+  This is the new theme system foundation.
+  :root defines the "Default" (dark purple) theme.
+*/
+:root {
+  --background: 236 50% 7%;      /* #0C0A1A - Your original background */
+  --foreground: 220 14% 96%;      /* Light Text */
+
+  --card: 236 30% 12%;           /* Slightly lighter card background */
+  --card-foreground: 220 14% 96%;
+
+  --popover: 236 50% 7%;
+  --popover-foreground: 220 14% 96%;
+
+  --primary: 263 88% 68%;          /* #8B5CF6 - Vibrant Purple */
+  --primary-foreground: 220 14% 96%;
+
+  --muted: 236 20% 18%;
+  --muted-foreground: 220 9% 65%;
+  
+  --accent: 236 20% 22%; /* This is the hover colour */
+  --accent-foreground: 220 14% 96%;
+
+  --border: 236 20% 18%;
+  --input: 236 20% 22%;
+  --ring: 263 88% 72%;
 }
 
+html.theme-crimson {
+  --background: 12 65% 6%;
+  --primary: 350 90% 60%;
+  --card: 12 50% 9%;
+  --muted: 12 20% 15%;
+  --accent: 12 20% 19%;
+  --border: 12 20% 15%;
+  --ring: 350 90% 65%;
+}
+
+html.theme-ocean {
+  --background: 204 70% 7%;
+  --primary: 188 90% 45%;
+  --card: 204 50% 10%;
+  --muted: 204 25% 16%;
+  --accent: 204 25% 20%;
+  --border: 204 25% 16%;
+  --ring: 188 90% 50%;
+}
+
+
+/* --- CORE STYLES --- */
 body {
-  background-color: #0C0A1A;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
 }
 
-/* Define a custom class for the background in case we need it elsewhere */
-.bg-background {
-  background-color: #0C0A1A;
-  background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
-}
-
-/* Base style for the solid typewriter cursor */
-.typewriter-cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background-color: #a9a3c2; /* Muted lavender colour */
-  margin-left: 2px; /* CORRECTED: Reduced distance from the text */
-  vertical-align: middle;
-}
-
-/* Keyframe animation for blinking effect */
-@keyframes blink {
-  50% {
-    background-color: transparent;
-  }
-}
-
-/* This class adds the blinking animation when applied */
-.typewriter-cursor.blinking {
-  animation: blink 1s infinite; /* CORRECTED: Slowed down the blinking speed */
-}
-
-/* --- Card Flip Animation Utilities --- */
-.perspective-1000 {
-  perspective: 1000px;
-}
-.transform-style-3d {
-  transform-style: preserve-3d;
-}
-.backface-hidden {
-  -webkit-backface-visibility: hidden; /* Safari */
-  backface-visibility: hidden;
-}
-/* --- New class for Clockwise Card Flip --- */
-.rotate-y-cw-180 {
-  transform: rotateY(-180deg);
-}
+/* --- YOUR EXISTING UTILITIES (UNCHANGED) --- */
+html { scroll-behavior: smooth; }
+.bg-background { background-color: hsl(var(--background)); background-image: url('https://www.transparenttextures.com/patterns/stardust.png'); }
+.typewriter-cursor { display: inline-block; width: 2px; height: 1em; background-color: #a9a3c2; margin-left: 2px; vertical-align: middle; }
+@keyframes blink { 50% { background-color: transparent; } }
+.typewriter-cursor.blinking { animation: blink 1s infinite; }
+.perspective-1000 { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.backface-hidden { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.rotate-y-cw-180 { transform: rotateY(-180deg); }

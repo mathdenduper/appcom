@@ -101,6 +101,11 @@ class QuizResultPayload(BaseModel):
     total_questions: int
     points_to_add: int
 
+class UpdateProfilePayload(BaseModel):
+    user_id: str
+    first_name: str
+    last_name: str
+
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
@@ -249,5 +254,29 @@ def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str
         if res.data is None:
             return []
         return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/update-profile")
+def update_profile(payload: UpdateProfilePayload):
+    """
+    Updates a user's name in BOTH the public profiles table
+    and the main auth.users metadata.
+    """
+    try:
+        # Step 1: Update the main authentication record (auth.users)
+        # This is the crucial step that was missing.
+        supabase.auth.admin.update_user_by_id(
+            payload.user_id,
+            {"user_metadata": {"first_name": payload.first_name, "last_name": payload.last_name}}
+        )
+
+        # Step 2: Update the public profiles table
+        supabase.table("profiles").update({
+            "first_name": payload.first_name,
+            "last_name": payload.last_name
+        }).eq("id", payload.user_id).execute()
+
+        return {"message": "Profile updated successfully in both locations."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

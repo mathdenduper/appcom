@@ -17,13 +17,12 @@ interface Profile {
     id: string;
     cr_score: number;
 }
-// Corrected to match your API's potential return values
 interface LeaderboardEntry {
     rank: number;
     id: string; 
     first_name: string | null;
     last_name: string | null;
-    cr_score: number; // Keeping this to match your original component's logic
+    cr_score: number;
 }
 
 
@@ -56,7 +55,7 @@ const ProfileMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) =
     return (
         <div className="relative" ref={menuRef}>
             {/* THEMED: Only the accent colour is changed */}
-            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center w-full space-x-4 p-4 bg-muted hover:bg-accent rounded-lg transition-colors border border-border">
+            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center w-full space-x-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700">
                 <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-lg font-bold text-primary-foreground flex-shrink-0">
                     {userInitials}
                 </div>
@@ -174,12 +173,12 @@ export default function DashboardPage() {
           
           <div className="flex flex-col min-h-0">
             <h2 className="text-2xl font-bold mb-4 flex-shrink-0">My Recent Study Sets</h2>
-             {/* THEMED CONTAINER */}
+            {/* THEMED CONTAINER */}
             <div className="space-y-3 overflow-y-auto pr-4 flex-1 bg-card border border-border rounded-lg p-4">
               {studySets.length > 0 ? (
                 studySets.slice(0, 8).map(set => (
-                   // Preserved your original hover effects
-                  <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-muted border-border rounded-lg hover:bg-accent transition-colors flex justify-between items-center">
+                  // PRESERVED YOUR ORIGINAL HOVER EFFECT
+                  <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
                     <span>{set.title}</span>
                     <span className="text-gray-500">&gt;</span>
                   </Link>
@@ -202,14 +201,14 @@ export default function DashboardPage() {
               {/* THEMED CONTAINER */}
               <div className="flex space-x-1 bg-card p-1 rounded-lg border border-border">
                 {/* THEMED TIMESPAN BUTTONS + PRESERVED HOVER */}
-                <button onClick={() => setTimeSpan('daily')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'daily' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>Daily</button>
-                <button onClick={() => setTimeSpan('weekly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'weekly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>Weekly</button>
-                <button onClick={() => setTimeSpan('monthly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>Monthly</button>
-                <button onClick={() => setTimeSpan('yearly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>Yearly</button>
-                <button onClick={() => setTimeSpan('all_time')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'all_time' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>All Time</button>
+                <button onClick={() => setTimeSpan('daily')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'daily' ? 'bg-primary text-primary-foreground' : 'text-gray-400 hover:bg-gray-700'}`}>Daily</button>
+                <button onClick={() => setTimeSpan('weekly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'weekly' ? 'bg-primary text-primary-foreground' : 'text-gray-400 hover:bg-gray-700'}`}>Weekly</button>
+                <button onClick={() => setTimeSpan('monthly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-gray-400 hover:bg-gray-700'}`}>Monthly</button>
+                <button onClick={() => setTimeSpan('yearly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-gray-400 hover:bg-gray-700'}`}>Yearly</button>
+                <button onClick={() => setTimeSpan('all_time')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'all_time' ? 'bg-primary text-primary-foreground' : 'text-gray-400 hover:bg-gray-700'}`}>All Time</button>
               </div>
             </div>
-             {/* THEMED CONTAINER */}
+            {/* THEMED CONTAINER */}
             <div className="bg-card p-4 rounded-lg border border-border overflow-y-auto flex-1">
               {leaderboard.length > 0 ? (
                 leaderboard.map(entry => {
@@ -219,7 +218,6 @@ export default function DashboardPage() {
                         // THEMED HIGHLIGHT
                         <div key={entry.rank} className={`flex justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/20' : ''}`}>
                             <span className="text-foreground">{entry.rank}{getOrdinalSuffix(entry.rank)}: {fullName || 'Anonymous'}</span>
-                            {/* THEMED TEXT */}
                             <span className="font-semibold text-primary">{entry.cr_score}CR</span>
                         </div>
                     )
@@ -232,14 +230,14 @@ export default function DashboardPage() {
         </div>
       </div>
       
-       {/* THEMED SIDEBAR */}
+      {/* THEMED SIDEBAR */}
       <div className="w-64 bg-card border-l border-border p-6 flex flex-col flex-shrink-0">
         <div className="space-y-4">
           <Link href="/sets" className="flex items-center justify-center gap-3 w-full p-4 bg-primary hover:bg-primary/90 rounded-lg text-primary-foreground font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
-          <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-muted hover:bg-accent rounded-lg text-white font-semibold transition-colors border border-border"><ResultsIcon /> Results</Link>
-          <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-muted hover:bg-accent rounded-lg text-white font-semibold transition-colors border border-border"><UploaderIcon /> Uploader</Link>
-          <button className="flex items-center justify-center gap-3 w-full p-4 bg-muted hover:bg-accent rounded-lg text-white font-semibold transition-colors border border-border"><SharingIcon /> Sharing</button>
-          <button className="flex items-center justify-center gap-3 w-full p-4 bg-muted hover:bg-accent rounded-lg text-white font-semibold transition-colors border border-border"><SettingsIcon /> Settings</button>
+          <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
+          <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
+          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</button>
+          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
         </div>
         <div className="mt-auto">
           <ProfileMenu user={user} onLogout={handleLogout} />
