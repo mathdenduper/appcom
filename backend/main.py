@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- AI Helper Function for Flashcards (Your working code) ---
+# --- AI Helper Functions (Your working code, unchanged) ---
 def generate_study_items_from_ai(text: str):
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -55,7 +55,6 @@ def generate_study_items_from_ai(text: str):
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request failed: {str(e)}")
 
-# --- AI Helper for Quizzes (Your working code) ---
 def generate_quiz_from_ai(text: str):
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -89,7 +88,7 @@ def generate_quiz_from_ai(text: str):
         raise HTTPException(status_code=503, detail=f"Groq API request for quiz failed: {str(e)}")
 
 
-# --- Data Models (Updated) ---
+# --- Data Models (Consolidated and Corrected) ---
 class UserCredentials(BaseModel):
     email: EmailStr
     password: str
@@ -106,10 +105,23 @@ class UpdateProfilePayload(BaseModel):
     first_name: str
     last_name: str
 
+# ** NEW: Added the missing Pydantic model for awarding points **
+class AwardCrPayload(BaseModel):
+    user_id: str
+    points_to_add: int
+
+class SharePayload(BaseModel):
+    sender_id: str
+    recipient_email: str
+    study_set_id: str
+
+class AcceptSharePayload(BaseModel):
+    share_id: str
+
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the StudyAI API! [FINAL AND WORKING]"}
+    return {"message": "Welcome to the StudyAI API!"}
 
 @app.post("/signup")
 def sign_up(credentials: UserCredentials):
@@ -131,6 +143,7 @@ def sign_in(credentials: UserCredentials):
 async def process_notes(
     title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
 ):
+    # ... (Your existing code, unchanged)
     extracted_text = ""
     if file and file.size > 0:
         if file.content_type == 'application/pdf':
@@ -163,6 +176,7 @@ async def process_notes(
 
 @app.get("/study-set/{set_id}")
 def get_study_set(set_id: str):
+    # ... (Your existing code, unchanged)
     try:
         set_res = supabase.table("study_sets").select("*").eq("id", set_id).single().execute()
         if not set_res.data:
@@ -172,8 +186,10 @@ def get_study_set(set_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/my-study-sets/{user_id}")
 def get_my_study_sets(user_id: str):
+    # ... (Your existing code, unchanged)
     try:
         res = supabase.table("study_sets").select("id, title, created_at").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
@@ -182,6 +198,7 @@ def get_my_study_sets(user_id: str):
 
 @app.get("/generate-quiz/{set_id}")
 def generate_quiz(set_id: str):
+    # ... (Your existing code, unchanged)
     try:
         set_res = supabase.table("study_sets").select("original_content").eq("id", set_id).single().execute()
         if not set_res.data or not set_res.data.get("original_content"):
@@ -195,15 +212,13 @@ def generate_quiz(set_id: str):
             raise e
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
-# --- THIS IS THE RESTORED AND UPGRADED CR SYSTEM ENDPOINT ---
+# ** FIXED: Removed the duplicate log_quiz_attempt function **
 @app.post("/log-quiz-attempt")
 def log_quiz_attempt(payload: QuizResultPayload):
     """
-    Logs a quiz attempt to the database, logs the transaction, 
-    and updates the user's total CR score.
+    Logs a quiz attempt, logs the CR transaction, and updates the user's score.
     """
     try:
-        # Step 1: Save the full quiz result to our new table.
         if payload.total_questions > 0:
             supabase.table("quiz_attempts").insert({
                 'user_id': payload.user_id,
@@ -212,14 +227,12 @@ def log_quiz_attempt(payload: QuizResultPayload):
                 'total_questions': payload.total_questions,
             }).execute()
 
-        # Step 2: If points were earned, log the transaction for the leaderboard.
         if payload.points_to_add > 0:
             supabase.table("cr_transactions").insert({
                 'user_id': payload.user_id,
                 'points_earned': payload.points_to_add
             }).execute()
         
-        # Step 3: Call the database function to update the user's total score.
         supabase.rpc('increment_cr_score', {
             'user_id_to_update': payload.user_id,
             'points_to_add': payload.points_to_add
@@ -227,28 +240,35 @@ def log_quiz_attempt(payload: QuizResultPayload):
 
         return {"message": "Quiz attempt logged and CR awarded successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        
-# --- THIS IS THE RESTORED RESULTS PAGE ENDPOINT ---
-@app.get("/get-results/{user_id}")
-def get_results(user_id: str):
+        raise HTTPException(status_code=500, detail=f"Database error during quiz log: {str(e)}")
+
+# ** NEW: Added the missing /award-cr endpoint **
+@app.post("/award-cr")
+def award_cr(payload: AwardCrPayload):
     """
-    Fetches the full quiz history for a specific user, joining with the
-    study_sets table to get the title for each attempt.
+    Awards a specific number of CR points to a user.
     """
     try:
-        # We now correctly join the tables to get the study set title
+        supabase.rpc('increment_cr_score', {
+            'user_id_to_update': payload.user_id,
+            'points_to_add': payload.points_to_add
+        }).execute()
+        return {"message": f"Successfully awarded {payload.points_to_add} CR points."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error during CR award: {str(e)}")
+        
+@app.get("/get-results/{user_id}")
+def get_results(user_id: str):
+    # ... (Your existing code, unchanged)
+    try:
         res = supabase.table("quiz_attempts").select("*, study_sets(title)").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- THIS IS THE FINAL, "SMART" LEADERBOARD ENDPOINT ---
 @app.get("/leaderboard")
 def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str] = 'UTC'):
-    """
-    Fetches the top 10 user profiles, ordered by CR score within a specific timespan.
-    """
+    # ... (Your existing code, unchanged)
     try:
         res = supabase.rpc('get_leaderboard', {'timespan_filter': timespan, 'p_timezone': timezone}).execute()
         if res.data is None:
@@ -257,26 +277,83 @@ def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+
 @app.post("/update-profile")
 def update_profile(payload: UpdateProfilePayload):
-    """
-    Updates a user's name in BOTH the public profiles table
-    and the main auth.users metadata.
-    """
+    # ... (Your existing code, unchanged)
     try:
-        # Step 1: Update the main authentication record (auth.users)
-        # This is the crucial step that was missing.
         supabase.auth.admin.update_user_by_id(
             payload.user_id,
             {"user_metadata": {"first_name": payload.first_name, "last_name": payload.last_name}}
         )
-
-        # Step 2: Update the public profiles table
         supabase.table("profiles").update({
             "first_name": payload.first_name,
             "last_name": payload.last_name
         }).eq("id", payload.user_id).execute()
-
         return {"message": "Profile updated successfully in both locations."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/users/search")
+def search_users(query: str, current_user_id: str):
+    """Searches for users by calling the dedicated RPC function."""
+    try:
+        # This now calls the efficient database function we created
+        res = supabase.rpc('search_users_by_email', {
+            'p_query': query,
+            'p_current_user_id': current_user_id
+        }).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error searching users: {str(e)}")
+
+
+@app.post("/share-set")
+def share_set(payload: SharePayload):
+    # ... (this endpoint is unchanged but will now work with the frontend)
+    try:
+        recipient_res = supabase.from_("profiles").select("id").eq("email", payload.recipient_email).single().execute()
+        if not recipient_res.data:
+            # Fallback to check auth.users if not in profiles
+            users = supabase.auth.admin.list_users()
+            recipient_id = None
+            for user in users.users:
+                if user.email == payload.recipient_email:
+                    recipient_id = user.id
+                    break
+            if not recipient_id:
+                 raise HTTPException(status_code=404, detail="Recipient not found.")
+        else:
+            recipient_id = recipient_res.data['id']
+
+        if str(recipient_id) == payload.sender_id:
+            raise HTTPException(status_code=400, detail="You cannot share a set with yourself.")
+
+        supabase.table("shares").insert({
+            "sender_id": payload.sender_id,
+            "recipient_id": str(recipient_id),
+            "study_set_id": payload.study_set_id
+        }).execute()
+
+        return {"message": "Set shared successfully!"}
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/shares/sent/{user_id}")
+def get_sent_shares_endpoint(user_id: str):
+    """Gets all shares sent by a user by calling the RPC function."""
+    try:
+        res = supabase.rpc('get_sent_shares', {'p_user_id': user_id}).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching sent shares: {str(e)}")
+
+@app.get("/shares/inbox/{user_id}")
+def get_inbox_endpoint(user_id: str):
+    """Gets all shares received by a user by calling the RPC function."""
+    try:
+        res = supabase.rpc('get_inbox_shares', {'p_user_id': user_id}).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching inbox: {str(e)}")

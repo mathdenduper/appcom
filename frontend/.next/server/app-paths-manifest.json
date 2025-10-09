@@ -1,7 +1,3 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/sets/page": "app/sets/page.js",
-  "/theme/page": "app/theme/page.js",
-  "/play/[setId]/page": "app/play/[setId]/page.js",
-  "/play/[setId]/quiz/page": "app/play/[setId]/quiz/page.js"
+  "/sharing/page": "app/sharing/page.js"
 }
