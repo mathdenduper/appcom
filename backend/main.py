@@ -112,7 +112,7 @@ class AwardCrPayload(BaseModel):
 
 class SharePayload(BaseModel):
     sender_id: str
-    recipient_email: str
+    recipient_id: str  # ** FIXED: Now correctly expects recipient_id **
     study_set_id: str
 
 class AcceptSharePayload(BaseModel):
@@ -298,7 +298,6 @@ def update_profile(payload: UpdateProfilePayload):
 def search_users(query: str, current_user_id: str):
     """Searches for users by calling the dedicated RPC function."""
     try:
-        # This now calls the efficient database function we created
         res = supabase.rpc('search_users_by_email', {
             'p_query': query,
             'p_current_user_id': current_user_id
@@ -310,35 +309,24 @@ def search_users(query: str, current_user_id: str):
 
 @app.post("/share-set")
 def share_set(payload: SharePayload):
-    # ... (this endpoint is unchanged but will now work with the frontend)
+    """Shares a study set from a sender to a recipient."""
     try:
-        recipient_res = supabase.from_("profiles").select("id").eq("email", payload.recipient_email).single().execute()
-        if not recipient_res.data:
-            # Fallback to check auth.users if not in profiles
-            users = supabase.auth.admin.list_users()
-            recipient_id = None
-            for user in users.users:
-                if user.email == payload.recipient_email:
-                    recipient_id = user.id
-                    break
-            if not recipient_id:
-                 raise HTTPException(status_code=404, detail="Recipient not found.")
-        else:
-            recipient_id = recipient_res.data['id']
-
-        if str(recipient_id) == payload.sender_id:
+        # ** FIXED: No longer need to look up email, we receive the ID directly **
+        if payload.recipient_id == payload.sender_id:
             raise HTTPException(status_code=400, detail="You cannot share a set with yourself.")
 
+        # Insert directly into the shares table
         supabase.table("shares").insert({
             "sender_id": payload.sender_id,
-            "recipient_id": str(recipient_id),
+            "recipient_id": payload.recipient_id,
             "study_set_id": payload.study_set_id
         }).execute()
 
         return {"message": "Set shared successfully!"}
     except Exception as e:
         if isinstance(e, HTTPException): raise e
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error while sharing: {str(e)}")
+
 
 @app.get("/shares/sent/{user_id}")
 def get_sent_shares_endpoint(user_id: str):
@@ -348,6 +336,7 @@ def get_sent_shares_endpoint(user_id: str):
         return res.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching sent shares: {str(e)}")
+
 
 @app.get("/shares/inbox/{user_id}")
 def get_inbox_endpoint(user_id: str):

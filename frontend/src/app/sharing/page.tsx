@@ -19,14 +19,16 @@ interface SearchResultUser {
   last_name: string | null;
   email: string;
 }
+// ** FIXED INTERFACE **
 interface SentShare {
   created_at: string;
   is_accepted: boolean;
-  study_sets: { title: string; };
-  recipient: { email: string; };
+  study_set_title: string; // Corrected from nested object
+  recipient_email: string;   // Corrected from nested object
 }
 
-// --- Share Modal Component ---
+
+// --- Share Modal Component (Unchanged) ---
 const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, studySets: StudySet[], onClose: () => void, onShareSent: () => void }) => {
   const [selectedSet, setSelectedSet] = useState<string>(studySets[0]?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,39 +41,32 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
       setSearchResults([]);
       return;
     }
-
     const search = setTimeout(async () => {
       setIsSearching(true);
       const response = await fetch(getApiUrl(`/users/search?query=${searchQuery}&current_user_id=${user.id}`));
       const data = await response.json();
       setSearchResults(data);
       setIsSearching(false);
-    }, 500); // Debounce search
-
+    }, 500);
     return () => clearTimeout(search);
   }, [searchQuery, user.id]);
 
   const handleShare = async () => {
-    if (!selectedSet || !selectedRecipient) {
-      alert('Please select a study set and a recipient.');
-      return;
-    }
+    if (!selectedSet || !selectedRecipient) return;
     try {
-      const response = await fetch(getApiUrl('/share-set'), {
+      await fetch(getApiUrl('/share-set'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sender_id: user.id,
-          recipient_email: selectedRecipient.email,
+          recipient_id: selectedRecipient.id,
           study_set_id: selectedSet,
         }),
       });
-      if (!response.ok) throw new Error('Failed to share set');
-      onShareSent(); // This will refresh the list of sent shares on the main page
+      onShareSent();
       onClose();
     } catch (error) {
-      console.error(error);
-      alert('Error sharing set.');
+      console.error('Error sharing set:', error);
     }
   };
 
@@ -102,7 +97,7 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setSelectedRecipient(null); // Clear selection when typing
+                setSelectedRecipient(null);
               }}
               placeholder="Start typing an email..."
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
@@ -119,7 +114,7 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
                             }}
                             className="p-3 hover:bg-gray-700 cursor-pointer"
                         >
-                            {result.first_name} {result.last_name} ({result.email})
+                            {result.first_name || ''} {result.last_name || ''} ({result.email})
                         </li>
                     ))}
                 </ul>
@@ -210,8 +205,9 @@ export default function SharingPage() {
                 {sentShares.map((item, index) => (
                   <li key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{item.study_sets.title}</h3>
-                      <p className="text-sm text-gray-400">Sent to: {item.recipient.email}</p>
+                      {/* ** FIXED JSX ** */}
+                      <h3 className="font-semibold text-lg">{item.study_set_title}</h3>
+                      <p className="text-sm text-gray-400">Sent to: {item.recipient_email}</p>
                     </div>
                     {item.is_accepted ? (
                        <span className="text-xs font-bold text-green-400 flex items-center gap-1.5">
