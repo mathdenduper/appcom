@@ -11,26 +11,46 @@ body {
   background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
 }
 
+/* Define a custom class for the background in case we need it elsewhere */
 .bg-background {
   background-color: #0C0A1A;
   background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
 }
 
+/* Base style for the solid typewriter cursor */
 .typewriter-cursor {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background-color: #a9a3c2;
-  margin-left: 2px;
+  background-color: #a9a3c2; /* Muted lavender colour */
+  margin-left: 2px; /* CORRECTED: Reduced distance from the text */
   vertical-align: middle;
 }
 
+/* Keyframe animation for blinking effect */
 @keyframes blink {
   50% {
     background-color: transparent;
   }
 }
 
+/* This class adds the blinking animation when applied */
 .typewriter-cursor.blinking {
-  animation: blink 1s infinite;
+  animation: blink 1s infinite; /* CORRECTED: Slowed down the blinking speed */
+}
+
+/* --- Card Flip Animation Utilities --- */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  -webkit-backface-visibility: hidden; /* Safari */
+  backface-visibility: hidden;
+}
+/* --- New class for Clockwise Card Flip --- */
+.rotate-y-cw-180 {
+  transform: rotateY(-180deg);
 }

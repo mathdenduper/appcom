@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../../supabaseClient';
 import Link from 'next/link';
@@ -22,6 +22,7 @@ export default function FlashcardsPage() {
   const [studySet, setStudySet] = useState<StudySet | null>(null);
   const [studyItems, setStudyItems] = useState<StudyItem[]>([]);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  // --- BUG FIX 1: Card now starts on the question side ---
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export default function FlashcardsPage() {
   const [seenCards, setSeenCards] = useState<Set<string>>(new Set());
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
-  const [isNavigating, setIsNavigating] = useState(false); // The new "safety lock"
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const params = useParams();
   const router = useRouter();
@@ -76,9 +77,6 @@ export default function FlashcardsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             user_id: user.id, 
-            set_id: setId,
-            score: null,
-            total_questions: null,
             points_to_add: points 
         }),
       });
@@ -88,7 +86,7 @@ export default function FlashcardsPage() {
   };
 
   useEffect(() => {
-    if (studyItems.length > 0 && user) {
+    if (studyItems.length > 0 && user && studyItems[currentItemIndex]) {
       const currentCardId = studyItems[currentItemIndex].id;
       if (!seenCards.has(currentCardId)) {
         awardPoints(1);
@@ -99,6 +97,7 @@ export default function FlashcardsPage() {
 
 
   const handleFlipCard = () => {
+    if (studyItems.length === 0) return;
     const currentCardId = studyItems[currentItemIndex].id;
     if (!isFlipped && !flippedCards.has(currentCardId)) {
       awardPoints(2);
@@ -107,7 +106,7 @@ export default function FlashcardsPage() {
     setIsFlipped(!isFlipped);
   };
 
-  const handlePreviousCard = () => {
+  const handlePreviousCard = useCallback(() => {
     if (isNavigating || currentItemIndex === 0) return;
     setIsNavigating(true);
     setIsFlipped(false);
@@ -115,9 +114,9 @@ export default function FlashcardsPage() {
         setCurrentItemIndex((prevIndex) => prevIndex - 1);
         setIsNavigating(false);
     }, 300);
-  };
+  }, [isNavigating, currentItemIndex]);
 
-  const handleNextCard = () => {
+  const handleNextCard = useCallback(() => {
     if (isNavigating || currentItemIndex >= studyItems.length - 1) return;
     setIsNavigating(true);
     setIsFlipped(false);
@@ -125,8 +124,25 @@ export default function FlashcardsPage() {
       setCurrentItemIndex((prevIndex) => prevIndex + 1);
       setIsNavigating(false);
     }, 300);
-  };
+  }, [isNavigating, currentItemIndex, studyItems.length]);
   
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === ' ') {
+            event.preventDefault();
+            handleFlipCard();
+        } else if (event.key === 'ArrowRight') {
+            handleNextCard();
+        } else if (event.key === 'ArrowLeft') {
+            handlePreviousCard();
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNextCard, handlePreviousCard]);
+
+
   if (loading) {
     return <p className="text-center text-white pt-40">Loading study set...</p>;
   }
@@ -142,7 +158,6 @@ export default function FlashcardsPage() {
     );
   }
 
-  // THIS IS THE CRITICAL FIX for the front-end crash
   if (!studyItems[currentItemIndex]) {
       return (
           <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center pt-24 px-4">
@@ -159,7 +174,7 @@ export default function FlashcardsPage() {
     <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl self-start mb-4">
           <Link href={`/play/${setId}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Back to Study Hub
           </Link>
       </div>
