@@ -255,7 +255,7 @@ export default function DashboardPage() {
           <Link href="/sets" className="flex items-center justify-center gap-3 w-full p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
           <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
           <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
-          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</button>
+          <Link href="/sharing" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</Link>
           <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
         </div>
         <div className="mt-auto">
