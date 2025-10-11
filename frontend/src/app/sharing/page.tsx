@@ -74,9 +74,9 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex justify-between items-center p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold">Share a Study Set</h2>
+          <h2 className="text-2xl text-white font-bold">Share a Study Set</h2>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-700">
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-6 w-6 text-white" />
           </button>
         </div>
         <div className="p-6 space-y-6">
@@ -103,7 +103,7 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
             />
              {searchResults.length > 0 && !selectedRecipient && (
-                <ul className="mt-2 border border-gray-700 rounded-lg bg-gray-800">
+                <ul className="mt-2 border border-gray-700 rounded-lg bg-gray-800 text-white max-h-48 overflow-y-auto">
                     {searchResults.map(result => (
                         <li 
                             key={result.id} 

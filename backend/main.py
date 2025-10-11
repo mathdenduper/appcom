@@ -120,6 +120,9 @@ class AcceptSharePayload(BaseModel):
     recipient_id: str
     study_set_id: str
 
+class DeclineSharePayload(BaseModel):
+    share_id: str
+
 # --- API Endpoints ---
 @app.get("/")
 def read_root():
@@ -351,21 +354,19 @@ def get_inbox_endpoint(user_id: str):
 
 @app.post("/shares/accept")
 def accept_share(payload: AcceptSharePayload):
-    """Accepts a shared study set, copying it to the user's account."""
+    """Accepts a shared study set, copying it and updating status."""
     try:
-        # Step 1: Mark the share as accepted
-        supabase.table("shares").update({"is_accepted": True}).eq("id", payload.share_id).execute()
+        # Step 1: Mark the share as 'accepted'
+        supabase.table("shares").update({"status": "accepted"}).eq("id", payload.share_id).execute()
 
         # Step 2: Get the original set and its items
         original_set_res = supabase.table("study_sets").select("*").eq("id", payload.study_set_id).single().execute()
         original_items_res = supabase.table("study_items").select("*").eq("set_id", payload.study_set_id).execute()
-
         if not original_set_res.data:
             raise HTTPException(status_code=404, detail="Original study set not found.")
-        
         original_set = original_set_res.data
         original_items = original_items_res.data
-
+        
         # Step 3: Create a new set for the recipient
         new_set_res = supabase.table("study_sets").insert({
             "user_id": payload.recipient_id,
@@ -381,7 +382,15 @@ def accept_share(payload: AcceptSharePayload):
                 for item in original_items
             ]
             supabase.table("study_items").insert(items_to_copy).execute()
-
         return {"message": "Set accepted and copied to your account!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error during accept: {str(e)}")
+
+@app.post("/shares/decline")
+def decline_share(payload: DeclineSharePayload):
+    """Declines a shared study set, updating its status."""
+    try:
+        supabase.table("shares").update({"status": "declined"}).eq("id", payload.share_id).execute()
+        return {"message": "Share declined successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error during decline: {str(e)}")
