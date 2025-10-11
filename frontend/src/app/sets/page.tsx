@@ -2,95 +2,116 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '@/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { getApiUrl } from '../../lib';
+import { getApiUrl } from '@/lib';
+import { PlusIcon, BookOpenIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
-// Data structure for a study set
 interface StudySet {
   id: string;
   title: string;
   created_at: string;
 }
 
-export default function AllSetsPage() {
+export default function MySetsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const checkUserAndFetchSets = async () => {
+    const fetchSets = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        
         try {
-          // This calls our existing backend endpoint to get all study sets
-          const apiUrl = getApiUrl(`/my-study-sets/${session.user.id}`);
-          const response = await fetch(apiUrl);
-          if (!response.ok) {
-            throw new Error('Failed to fetch your study sets.');
-          }
+          const response = await fetch(getApiUrl(`/my-study-sets/${session.user.id}`));
+          if (!response.ok) throw new Error('Failed to fetch study sets');
           const data = await response.json();
           setStudySets(data);
-        } catch (err: any) {
-          setError(err.message);
+        } catch (error) {
+          console.error(error);
         }
       } else {
         router.push('/login');
       }
       setLoading(false);
     };
-    checkUserAndFetchSets();
+    fetchSets();
   }, [router]);
 
-  if (loading) {
-    return (
-        <div className="min-h-screen bg-background text-white flex items-center justify-center">
-            <p className="text-lg text-gray-400">Loading your study sets...</p>
-        </div>
-    );
-  }
+  // Filter sets into two lists: original and shared
+  const myOriginalSets = studySets.filter(set => !set.title.startsWith('(Shared)'));
+  const sharedWithMeSets = studySets.filter(set => set.title.startsWith('(Shared)'));
 
-  if (error) {
-    return <p className="text-center text-red-400 pt-40">Error: {error}</p>;
+  if (loading) {
+    return <div className="text-center text-gray-400 pt-40">Loading your sets...</div>;
   }
 
   return (
     <div className="min-h-screen bg-background text-white pt-24 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold">My Study Sets</h1>
-            <Link href="/uploader" className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Create New Set
-            </Link>
+          <h1 className="text-4xl font-bold">My Study Sets</h1>
+          <Link href="/uploader" className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+            <PlusIcon className="h-5 w-5" />
+            Create New
+          </Link>
         </div>
 
-        {studySets.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {studySets.map(set => (
-              // Each card now links to the study hub for that specific set
-              <Link href={`/play/${set.id}`} key={set.id} className="block p-6 bg-gray-900 border border-gray-800 rounded-lg hover:border-purple-600 hover:scale-105 transition-transform">
-                <h2 className="text-xl font-bold truncate">{set.title}</h2>
-                <p className="text-sm text-gray-400 mt-2">
-                  Created: {new Date(set.created_at).toLocaleDateString()}
-                </p>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 px-4 bg-gray-900 border border-gray-800 rounded-lg">
-              <h2 className="text-2xl font-semibold">No Study Sets Found</h2>
-              <p className="text-gray-400 mt-2">You haven't created any study sets yet. Get started now!</p>
-              <Link href="/uploader" className="mt-6 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg">
-                  Create your first set
-              </Link>
-          </div>
-        )}
+        {/* Section 1: Your Original Sets */}
+        <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-3"><BookOpenIcon className="h-6 w-6"/> Your Sets</h2>
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-6">
+            {myOriginalSets.length > 0 ? (
+                <ul className="space-y-4">
+                {myOriginalSets.map(set => (
+                    <li key={set.id}>
+                    <Link href={`/play/${set.id}`} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
+                        <div>
+                        <h3 className="font-semibold text-lg">{set.title}</h3>
+                        <p className="text-sm text-gray-400">
+                            Created on: {new Date(set.created_at).toLocaleDateString()}
+                        </p>
+                        </div>
+                        <span className="text-gray-500">&gt;</span>
+                    </Link>
+                    </li>
+                ))}
+                </ul>
+            ) : (
+                <p className="text-gray-400 text-center py-4">You haven't created any study sets yet.</p>
+            )}
+            </div>
+        </div>
+
+        {/* Section 2: Sets Shared With You */}
+        <div>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-3"><UserGroupIcon className="h-6 w-6"/> Shared With You</h2>
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-6">
+            {sharedWithMeSets.length > 0 ? (
+                <ul className="space-y-4">
+                {sharedWithMeSets.map(set => (
+                    <li key={set.id}>
+                    <Link href={`/play/${set.id}`} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
+                        <div>
+                        <h3 className="font-semibold text-lg">{set.title.replace('(Shared) ', '')}</h3>
+                        <p className="text-sm text-gray-400">
+                            Accepted on: {new Date(set.created_at).toLocaleDateString()}
+                        </p>
+                        </div>
+                        <span className="text-gray-500">&gt;</span>
+                    </Link>
+                    </li>
+                ))}
+                </ul>
+            ) : (
+                <p className="text-gray-400 text-center py-4">No sets have been shared with you yet.</p>
+            )}
+            </div>
+        </div>
+
       </div>
     </div>
   );

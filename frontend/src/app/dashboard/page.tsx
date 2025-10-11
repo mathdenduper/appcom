@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { getApiUrl } from '../../lib';
-import { CheckCircleIcon, EnvelopeIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BookOpenIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+
 
 // --- Data Structures ---
 interface StudySet {
@@ -24,93 +25,16 @@ interface LeaderboardEntry {
     last_name: string | null;
     cr_score: number;
 }
-interface Share {
-  id: string;
-  created_at: string;
-  is_accepted: boolean;
-  study_sets: { title: string; };
-  sender: { first_name: string; last_name: string; };
-}
 
-// --- INBOX MODAL COMPONENT ---
-const InboxModal = ({ user, onClose }: { user: User, onClose: () => void }) => {
-  const [shares, setShares] = useState<Share[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchShares = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(getApiUrl(`/my-shares/${user.id}`));
-        if (!response.ok) throw new Error('Failed to fetch shares');
-        const data = await response.json();
-        setShares(data);
-      } catch (error) {
-        console.error(error);
-      }
-      setLoading(false);
-    };
-    fetchShares();
-  }, [user.id]);
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold">Inbox</h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-700">
-            <XMarkIcon className="h-6 w-6" />
-          </button>
-        </div>
-        <div className="p-6 overflow-y-auto">
-          {loading ? (
-            <p className="text-gray-400">Loading inbox...</p>
-          ) : shares.length > 0 ? (
-            <ul className="space-y-4">
-              {shares.map(share => (
-                <li key={share.id} className={`bg-gray-800 border border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4 ${share.is_accepted ? 'opacity-50' : ''}`}>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">{share.study_sets.title}</h3>
-                    <p className="text-sm text-gray-400">
-                      Shared by: {share.sender.first_name} {share.sender.last_name}
-                    </p>
-                  </div>
-                  {share.is_accepted ? (
-                     <span className="flex items-center gap-2 text-green-400 text-sm font-semibold">
-                        <CheckCircleIcon className="h-5 w-5" />
-                        Accepted
-                     </span>
-                  ) : (
-                    <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors">
-                        Accept
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-center py-12 flex flex-col items-center">
-              <EnvelopeIcon className="h-16 w-16 text-gray-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Your inbox is empty</h3>
-              <p className="text-gray-400">Shared sets will appear here.</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Reusable Icon Components ---
+// --- (Your Reusable Icon and Profile Menu components remain unchanged here) ---
 const PlayIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>;
 const ResultsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>;
 const UploaderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
 const SharingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>;
 const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
 
-// --- Profile Menu Component ---
 const ProfileMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
-    // ... (This component is unchanged)
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const firstName = user.user_metadata?.first_name || '';
@@ -147,36 +71,23 @@ const ProfileMenu = ({ user, onLogout }: { user: User, onLogout: () => void }) =
         </div>
     );
 };
-
-// --- Helper function for Ordinal Suffixes ---
 const getOrdinalSuffix = (n: number) => {
     const s = ["th", "st", "nd", "rd"];
     const v = n % 100;
     return s[(v - 20) % 10] || s[v] || s[0];
 };
 
-// --- Main Dashboard Component ---
-function Dashboard() {
+// --- Main Dashboard Page ---
+export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [timeSpan, setTimeSpan] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'all_time'>('all_time');
-  const [isInboxOpen, setIsInboxOpen] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get('showInbox') === 'true') {
-      setIsInboxOpen(true);
-      // Optional: remove the query param from URL without reloading
-      router.replace('/dashboard', { scroll: false });
-    }
-  }, [searchParams, router]);
-
-  useEffect(() => {
-    // ... (This useEffect is unchanged)
     const fetchDashboardData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -224,6 +135,10 @@ function Dashboard() {
     await supabase.auth.signOut();
     router.push('/');
   };
+  
+  // --- NEW: Filter study sets into two lists ---
+  const myOriginalSets = studySets.filter(set => !set.title.startsWith('(Shared)'));
+  const sharedWithMeSets = studySets.filter(set => set.title.startsWith('(Shared)'));
 
   if (loading) {
     return <p className="text-center text-white pt-40">Loading your dashboard...</p>;
@@ -240,96 +155,113 @@ function Dashboard() {
   const crScore = profile?.cr_score ?? 0;
   
   return (
-    <>
-      {isInboxOpen && <InboxModal user={user} onClose={() => setIsInboxOpen(false)} />}
-
-      <div className="h-screen bg-background text-white flex pt-20">
-        {/* ... The rest of your dashboard JSX is unchanged ... */}
-        <div className="flex-1 p-8 flex flex-col min-h-0">
-          <div className="flex items-center space-x-6 mb-8 flex-shrink-0">
-            <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-4xl font-bold flex-shrink-0">
-              {userInitials.toUpperCase() || userName.substring(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold">{userName}</h1>
-              <p className="text-gray-400 text-lg">{crScore} CR</p>
-            </div>
+    <div className="h-screen bg-background text-white flex pt-20">
+      
+      <div className="flex-1 p-8 flex flex-col min-h-0">
+        <div className="flex items-center space-x-6 mb-8 flex-shrink-0">
+          <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-4xl font-bold flex-shrink-0">
+            {userInitials.toUpperCase() || userName.substring(0, 2).toUpperCase()}
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1 min-h-0">
-            <div className="flex flex-col min-h-0">
-              <h2 className="text-2xl font-bold mb-4 flex-shrink-0">My Recent Study Sets</h2>
-              <div className="space-y-3 overflow-y-auto pr-4 flex-1 bg-gray-900 border border-gray-800 rounded-lg p-4">
-                {studySets.length > 0 ? (
-                  studySets.slice(0, 8).map(set => (
-                    <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
-                      <span>{set.title}</span>
-                      <span className="text-gray-500">&gt;</span>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <p className="text-gray-400">You haven't created any study sets yet.</p>
-                    <Link href="/uploader" className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
-                      Create your first set
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col min-h-0">
-              <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h2 className="text-2xl font-bold">CR Leaderboard</h2>
-                <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
-                  <button onClick={() => setTimeSpan('daily')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'daily' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Daily</button>
-                  <button onClick={() => setTimeSpan('weekly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'weekly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Weekly</button>
-                  <button onClick={() => setTimeSpan('monthly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'monthly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Monthly</button>
-                  <button onClick={() => setTimeSpan('yearly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'yearly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Yearly</button>
-                  <button onClick={() => setTimeSpan('all_time')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'all_time' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>All Time</button>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-4 rounded-lg border border-gray-800 overflow-y-auto flex-1">
-                {leaderboard.length > 0 ? (
-                  leaderboard.map(entry => {
-                      const fullName = `${entry.first_name || ''} ${entry.last_name || ''}`.trim();
-                      const isCurrentUser = (entry.first_name === firstName && entry.last_name === lastName);
-                      return (
-                          <div key={entry.rank} className={`flex justify-between p-3 rounded-md ${isCurrentUser ? 'bg-purple-900 bg-opacity-50' : ''}`}>
-                              <span>{entry.rank}{getOrdinalSuffix(entry.rank)}: {fullName || 'Anonymous'}</span>
-                              <span className="font-semibold text-purple-400">{entry.cr_score}CR</span>
-                          </div>
-                      )
-                  })
-                ) : (
-                  <p className="text-gray-400 text-center py-4">No leaderboard data available for this period.</p>
-                )}
-              </div>
-            </div>
+          <div>
+            <h1 className="text-4xl font-bold">{userName}</h1>
+            <p className="text-gray-400 text-lg">{crScore} CR</p>
           </div>
         </div>
-        
-        <div className="w-64 bg-gray-900 border-l border-gray-800 p-6 flex flex-col flex-shrink-0">
-          <div className="space-y-4">
-            <Link href="/sets" className="flex items-center justify-center gap-3 w-full p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
-            <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
-            <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
-            <Link href="/sharing" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</Link>
-            <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1 min-h-0">
+          
+          <div className="flex flex-col min-h-0">
+            <h2 className="text-2xl font-bold mb-4 flex-shrink-0">My Recent Study Sets</h2>
+            <div className="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col min-h-0">
+              
+              {/* --- Your Original Sets --- */}
+              <div className="flex-1 overflow-y-auto pr-2">
+                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2"><BookOpenIcon className="h-5 w-5"/> Your Sets</h3>
+                {myOriginalSets.length > 0 ? (
+                  <div className="space-y-3">
+                    {myOriginalSets.slice(0, 4).map(set => (
+                      <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
+                        <span>{set.title}</span>
+                        <span className="text-gray-500">&gt;</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-gray-500">You haven't created any sets yet.</p>}
+              </div>
+
+              {/* --- Divider for shared sets (only if there are any) --- */}
+              {sharedWithMeSets.length > 0 && <hr className="border-gray-700 my-4"/>}
+
+              {/* --- Shared With You Sets --- */}
+              <div className="flex-1 overflow-y-auto pr-2">
+                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2"><UserGroupIcon className="h-5 w-5"/> Shared With You</h3>
+                {sharedWithMeSets.length > 0 ? (
+                  <div className="space-y-3">
+                    {sharedWithMeSets.slice(0, 4).map(set => (
+                      <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
+                        <span className="truncate">{set.title.replace('(Shared) ', '')}</span>
+                        <span className="text-gray-500">&gt;</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-gray-500">No sets have been shared with you yet.</p>}
+              </div>
+
+              {myOriginalSets.length === 0 && sharedWithMeSets.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <p className="text-gray-400">You haven't created or received any study sets yet.</p>
+                  <Link href="/uploader" className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
+                    Create your first set
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="mt-auto">
-            <ProfileMenu user={user} onLogout={handleLogout} />
+
+          <div className="flex flex-col min-h-0">
+            {/* ... (Your Leaderboard component remains unchanged here) ... */}
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 className="text-2xl font-bold">CR Leaderboard</h2>
+                <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
+                    <button onClick={() => setTimeSpan('daily')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'daily' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Daily</button>
+                    <button onClick={() => setTimeSpan('weekly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'weekly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Weekly</button>
+                    <button onClick={() => setTimeSpan('monthly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'monthly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Monthly</button>
+                    <button onClick={() => setTimeSpan('yearly')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'yearly' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>Yearly</button>
+                    <button onClick={() => setTimeSpan('all_time')} className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${timeSpan === 'all_time' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>All Time</button>
+                </div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-800 overflow-y-auto flex-1">
+              {leaderboard.length > 0 ? (
+                leaderboard.map(entry => {
+                    const fullName = `${entry.first_name || ''} ${entry.last_name || ''}`.trim();
+                    const isCurrentUser = (entry.first_name === firstName && entry.last_name === lastName);
+                    return (
+                        <div key={entry.rank} className={`flex justify-between p-3 rounded-md ${isCurrentUser ? 'bg-purple-900 bg-opacity-50' : ''}`}>
+                            <span>{entry.rank}{getOrdinalSuffix(entry.rank)}: {fullName || 'Anonymous'}</span>
+                            <span className="font-semibold text-purple-400">{entry.cr_score}CR</span>
+                        </div>
+                    )
+                })
+              ) : (
+                <p className="text-gray-400 text-center py-4">No leaderboard data available for this period.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </>
-  );
-}
-
-// This wrapper is necessary because useSearchParams can only be used in a Client Component
-// that is wrapped in a <Suspense> boundary.
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Dashboard />
-    </Suspense>
+      
+      <div className="w-64 bg-gray-900 border-l border-gray-800 p-6 flex flex-col flex-shrink-0">
+        <div className="space-y-4">
+          <Link href="/sets" className="flex items-center justify-center gap-3 w-full p-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors text-lg"><PlayIcon /> Play</Link>
+          <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
+          <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
+          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</button>
+          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
+        </div>
+        <div className="mt-auto">
+          <ProfileMenu user={user} onLogout={handleLogout} />
+        </div>
+      </div>
+    </div>
   );
 }

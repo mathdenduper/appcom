@@ -5,3 +5,5 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 stuff to add:
 leaderboard in weekly, monthly, yearly, all time
 on chrome in flashcards the "back to study hub button" is out of view and only if the user zooms out (ctrl -) they can see it. need to fix
+password recovery
+delete sets

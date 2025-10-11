@@ -10,7 +10,7 @@ import { ChevronDownIcon, EnvelopeIcon, CheckCircleIcon } from '@heroicons/react
 import LogoLink from './LogoLink';
 import { getApiUrl } from '@/lib';
 
-// --- INBOX POPOUT COMPONENT ---
+// --- INBOX POPOUT COMPONENT (WITH CORRECTIONS) ---
 function InboxPopover({ user }: { user: User }) {
   const [shares, setShares] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,17 +28,41 @@ function InboxPopover({ user }: { user: User }) {
     setLoading(false);
   };
 
+  const handleAccept = async (share: any) => {
+    try {
+      const response = await fetch(getApiUrl('/shares/accept'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          share_id: share.id,
+          recipient_id: user.id,
+          study_set_id: share.study_set_id, // Use the flat property
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to accept share');
+      fetchShares(); // Refresh the inbox list
+    } catch (error) {
+      console.error('Failed to accept share:', error);
+      alert('Failed to accept share.');
+    }
+  };
+
   return (
     <Popover className="relative">
       {({ open }) => (
         <>
           <Popover.Button
-            onClick={() => !open && fetchShares()}
+            onClick={() => {
+              if (!open) {
+                fetchShares();
+              }
+            }}
             className="p-2 rounded-full text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
             title="Inbox"
           >
             <EnvelopeIcon className="h-6 w-6" />
           </Popover.Button>
+
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"
@@ -53,14 +77,16 @@ function InboxPopover({ user }: { user: User }) {
                 <h3 className="text-lg font-semibold text-white">Inbox</h3>
               </div>
               <div className="p-2 max-h-96 overflow-y-auto">
-                {loading ? <p className="text-center text-gray-400 py-4">Loading...</p>
-                : shares.length > 0 ? (
+                {loading ? (
+                  <p className="text-center text-gray-300 py-4">Loading...</p>
+                ) : shares.length > 0 ? (
                   <ul className="space-y-2">
                     {shares.map((share) => (
                       <li key={share.id} className={`p-3 rounded-md ${share.is_accepted ? 'opacity-60' : 'bg-gray-700/50'}`}>
-                        <p className="font-semibold text-white">{share.study_sets.title}</p>
+                        {/* ** FIXED: Use flat properties from backend ** */}
+                        <p className="font-semibold text-white">{share.study_set_title}</p>
                         <p className="text-sm text-gray-300">
-                          From: {share.sender.first_name} {share.sender.last_name}
+                          From: {share.sender_first_name} {share.sender_last_name}
                         </p>
                         {share.is_accepted ? (
                           <div className="mt-2 flex items-center gap-2 text-green-400 text-xs">
@@ -68,7 +94,9 @@ function InboxPopover({ user }: { user: User }) {
                             <span>Accepted</span>
                           </div>
                         ) : (
-                          <button className="mt-2 w-full px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md transition-colors">
+                          <button 
+                            onClick={() => handleAccept(share)}
+                            className="mt-2 w-full px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md transition-colors">
                             Accept
                           </button>
                         )}
@@ -76,7 +104,7 @@ function InboxPopover({ user }: { user: User }) {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-center text-gray-400 py-8">Your inbox is empty.</p>
+                  <p className="text-center text-gray-300 py-8">Your inbox is empty.</p>
                 )}
               </div>
             </Popover.Panel>
@@ -88,22 +116,23 @@ function InboxPopover({ user }: { user: User }) {
 }
 
 
-// --- MAIN HEADER COMPONENT ---
+// --- MAIN HEADER COMPONENT (UNCHANGED) ---
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    };
-    fetchUser();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
+
+    // Also fetch user on initial load
+    const getInitialUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+    }
+    getInitialUser();
 
     return () => {
       subscription?.unsubscribe();
@@ -132,10 +161,9 @@ export default function Header() {
         <LogoLink />
         
         <div className="flex items-center space-x-4">
-          {user ? (
+          {user && !isHomePage ? (
             <div className="flex items-center space-x-4">
               <InboxPopover user={user} />
-
               <Menu as="div" className="relative">
                 <div>
                   <Menu.Button className="flex items-center text-sm rounded-full text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
@@ -175,7 +203,7 @@ export default function Header() {
                 </Transition>
               </Menu>
             </div>
-          ) : isHomePage ? (
+          ) : (
             <>
               <Link href="/login" className="text-gray-300 hover:text-white transition-colors">
                 Sign In
@@ -184,8 +212,6 @@ export default function Header() {
                 Sign Up
               </Link>
             </>
-          ) : (
-             <div style={{ width: '170px', height: '40px' }} />
           )}
         </div>
       </nav>
