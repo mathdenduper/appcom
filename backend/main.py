@@ -164,7 +164,6 @@ def sign_in(credentials: UserCredentials):
 async def process_notes(
     title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
 ):
-    # ... (Your existing code, unchanged)
     extracted_text = ""
     if file and file.size > 0:
         if file.content_type == 'application/pdf':
@@ -191,9 +190,19 @@ async def process_notes(
         new_set_id = set_insert_res.data[0]['id']
         items_to_insert = [{"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']} for item in generated_items]
         supabase.table("study_items").insert(items_to_insert).execute()
+
+        # --- THIS IS THE FIX ---
+        # Track that a new set has been created
+        supabase.rpc('update_daily_stat', {
+            'p_user_id': user_id,
+            'p_stat_type': 'sets_created',
+            'p_increment_value': 1
+        }).execute()
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     return {"message": "Study set generated and saved successfully!", "study_set_id": new_set_id}
+
 
 @app.get("/study-set/{set_id}")
 def get_study_set(set_id: str):

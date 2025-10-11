@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getApiUrl } from '../../../../lib';
+import { getApiUrl, trackUserAction } from '../../../../lib';
 import { supabase } from '../../../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
-// --- Data Structures for the Quiz ---
 interface QuizQuestion {
   question: string;
   options: string[];
@@ -35,7 +34,7 @@ export default function QuizPage() {
         setUser(session.user);
       } else {
         router.push('/login');
-        return; // Stop execution if no user
+        return;
       }
 
       setLoading(true);
@@ -71,10 +70,10 @@ export default function QuizPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
     } else {
-      // --- THIS IS THE RESTORED CR LOGIC ---
-      // When the quiz is finished, we log the attempt and award CR.
       if (user) {
-        const pointsToAward = score * 10; // 10 points per correct answer
+        const totalQuestions = questions.length;
+        const percentageScore = Math.round((score / totalQuestions) * 100);
+        
         try {
           const apiUrl = getApiUrl('/log-quiz-attempt');
           await fetch(apiUrl, {
@@ -83,13 +82,22 @@ export default function QuizPage() {
             body: JSON.stringify({ 
               user_id: user.id, 
               set_id: setId,
-              score: score,
-              total_questions: questions.length,
-              points_to_add: pointsToAward 
+              score: percentageScore,
+              total_questions: totalQuestions,
+              points_to_add: score * 10
             }),
           });
         } catch (error) {
           console.error("Failed to log quiz attempt:", error);
+        }
+
+        // --- THIS IS THE FIX ---
+        // 1. Track that a quiz was completed
+        trackUserAction(user.id, 'quizzes_completed', 1);
+        
+        // 2. Track the number of correct answers for cumulative quests
+        if (score > 0) {
+          trackUserAction(user.id, 'quiz_questions_correct', score);
         }
       }
       setIsFinished(true);

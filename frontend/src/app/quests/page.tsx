@@ -36,7 +36,7 @@ const QuestCard = ({ qc, onClaim }: { qc: QuestCompletion; onClaim: (completionI
                     <h3 className="text-xl font-bold">{qc.quests.title}</h3>
                     <p className="text-sm text-gray-400 mt-1">{qc.quests.description}</p>
                 </div>
-                <div className="flex items-center gap-2 font-bold text-yellow-400">
+                <div className="flex items-center gap-2 font-bold text-yellow-400 whitespace-nowrap">
                     <StarIcon className="h-5 w-5" />
                     <span>{qc.quests.reward} CR</span>
                 </div>
@@ -82,7 +82,6 @@ export default function QuestsPage() {
             const response = await fetch(getApiUrl(`/quests/daily/${currentUser.id}`));
             if (!response.ok) throw new Error("Failed to load quests.");
             const data = await response.json();
-            // Sort quests with hard on top
             data.sort((a: QuestCompletion, b: QuestCompletion) => (b.quests.difficulty > a.quests.difficulty) ? 1 : -1);
             setQuests(data);
         } catch (error) {
@@ -118,7 +117,7 @@ export default function QuestsPage() {
                 })
             });
             if (!response.ok) throw new Error("Failed to claim reward.");
-            await fetchQuests(user); // Refresh quests after claiming
+            await fetchQuests(user);
         } catch (error) {
             console.error(error);
             alert("Failed to claim reward. Please try again.");
@@ -127,12 +126,15 @@ export default function QuestsPage() {
 
     return (
         <div className="min-h-screen bg-background text-white pt-24 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
+            {/* --- THIS IS THE FIX --- */}
+            {/* Changed max-w-4xl to max-w-2xl for a better centered column */}
+            <div className="max-w-2xl mx-auto">
                 <h1 className="text-4xl font-bold mb-2">Daily Quests</h1>
                 <p className="text-gray-400 mb-8">Complete these quests before the day ends to earn CR points!</p>
                 
                 {loading ? <p>Loading quests...</p> : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    // Changed the grid layout to a simple vertical space-y-6 for stacking
+                    <div className="space-y-6">
                         {quests.map(qc => (
                             <QuestCard key={qc.id} qc={qc} onClaim={handleClaim} />
                         ))}

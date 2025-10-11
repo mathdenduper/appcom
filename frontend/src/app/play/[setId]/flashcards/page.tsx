@@ -4,10 +4,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../../supabaseClient';
 import Link from 'next/link';
-import { getApiUrl } from '../../../../lib';
+import { getApiUrl, trackUserAction } from '../../../../lib';
 import type { User } from '@supabase/supabase-js';
 
-// --- Data Structures ---
 interface StudyItem {
   id: string;
   question: string;
@@ -22,11 +21,9 @@ export default function FlashcardsPage() {
   const [studySet, setStudySet] = useState<StudySet | null>(null);
   const [studyItems, setStudyItems] = useState<StudyItem[]>([]);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  // --- BUG FIX 1: Card now starts on the question side ---
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
   const [seenCards, setSeenCards] = useState<Set<string>>(new Set());
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<User | null>(null);
@@ -95,12 +92,15 @@ export default function FlashcardsPage() {
     }
   }, [currentItemIndex, studyItems, user]);
 
-
   const handleFlipCard = () => {
-    if (studyItems.length === 0) return;
+    if (studyItems.length === 0 || !user) return;
     const currentCardId = studyItems[currentItemIndex].id;
+
     if (!isFlipped && !flippedCards.has(currentCardId)) {
-      awardPoints(2);
+      awardPoints(2); 
+      // --- THIS IS THE FIX ---
+      // Changed 'FLIP_CARDS' to 'flashcards_flipped' to match the database
+      trackUserAction(user.id, 'flashcards_flipped', 1);
       setFlippedCards(new Set(flippedCards).add(currentCardId));
     }
     setIsFlipped(!isFlipped);
@@ -126,7 +126,6 @@ export default function FlashcardsPage() {
     }, 300);
   }, [isNavigating, currentItemIndex, studyItems.length]);
   
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === ' ') {
