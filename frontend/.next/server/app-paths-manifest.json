@@ -1,4 +1,7 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
+  "/quests/page": "app/quests/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/sharing/page": "app/sharing/page.js"
+  "/play/[setId]/page": "app/play/[setId]/page.js",
+  "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js"
 }

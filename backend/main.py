@@ -1,5 +1,5 @@
 # backend/main.py
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from supabase_client import supabase
@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 from groq import Groq
 import random
 from typing import Optional
+import datetime
 
 load_dotenv()
 app = FastAPI()
 
-# Your final, robust CORS configuration
 origins = ["*"] 
 app.add_middleware(
     CORSMiddleware,
@@ -25,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- AI Helper Functions (Your working code, unchanged) ---
 def generate_study_items_from_ai(text: str):
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -122,6 +121,23 @@ class AcceptSharePayload(BaseModel):
 
 class DeclineSharePayload(BaseModel):
     share_id: str
+
+class DeletePayload(BaseModel):
+    user_id: str
+
+class QuestCompletionPayload(BaseModel):
+    user_id: str
+    quest_type: str
+    value: int
+
+class StatUpdatePayload(BaseModel):
+    user_id: str
+    stat_type: str
+    value: int
+class ClaimRewardPayload(BaseModel):
+    user_id: str
+    completion_id: int
+    points_to_add: int
 
 # --- API Endpoints ---
 @app.get("/")
@@ -394,3 +410,78 @@ def decline_share(payload: DeclineSharePayload):
         return {"message": "Share declined successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error during decline: {str(e)}")
+
+@app.delete("/delete-set/{set_id}")
+def delete_study_set(set_id: str, payload: DeletePayload):
+    """
+    Deletes a study set and all its related items, but only if the
+    requesting user is the owner of the set.
+    """
+    try:
+        # First, verify ownership to ensure security
+        set_res = supabase.table("study_sets").select("user_id").eq("id", set_id).single().execute()
+        if not set_res.data:
+            raise HTTPException(status_code=404, detail="Study set not found.")
+        
+        if set_res.data['user_id'] != payload.user_id:
+            raise HTTPException(status_code=403, detail="You are not authorised to delete this set.")
+
+        # If ownership is verified, proceed with deletion
+        # Cascade delete in Supabase will handle related study_items and shares
+        supabase.table("study_sets").delete().eq("id", set_id).execute()
+
+        return {"message": "Study set deleted successfully."}
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.post("/stats/update")
+def update_user_stats(payload: StatUpdatePayload):
+    """
+    Updates a user's daily stats. Creates a new row for the day if one doesn't exist.
+    This is an UPSERT operation.
+    """
+    try:
+        # This calls a database function to either insert a new daily record or update an existing one.
+        # The function handles incrementing the correct stat column.
+        supabase.rpc('update_daily_stat', {
+            'p_user_id': payload.user_id,
+            'p_stat_type': payload.stat_type,
+            'p_increment_value': payload.value
+        }).execute()
+        return {"message": "Stats updated successfully."}
+    except Exception as e:
+        # Fail silently so we don't interrupt the user
+        print(f"Error updating stats: {str(e)}")
+        return {"message": "An error occurred but was handled."}
+
+
+@app.get("/quests/daily/{user_id}")
+def get_daily_quests(user_id: str):
+    """
+    Fetches or generates daily quests for a user and joins them with today's progress.
+    """
+    try:
+        res = supabase.rpc('get_daily_quests_with_progress', {'p_user_id': user_id}).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching daily quests: {str(e)}")
+
+
+@app.post("/quests/claim-reward")
+def claim_quest_reward(payload: ClaimRewardPayload):
+    # ... (this endpoint is unchanged)
+    try:
+        res = supabase.table("user_quest_completions").select("*, quests(*)").eq("id", payload.completion_id).eq("user_id", payload.user_id).single().execute()
+        if not res.data or res.data['is_claimed']:
+            raise HTTPException(status_code=400, detail="Quest not available to be claimed.")
+        quest = res.data['quests']
+        if res.data['progress'] < quest['target_value']:
+            raise HTTPException(status_code=400, detail="Quest is not yet completed.")
+        supabase.table("user_quest_completions").update({"is_claimed": True}).eq("id", res.data['id']).execute()
+        supabase.rpc('increment_cr_score', {'user_id_to_update': payload.user_id, 'points_to_add': payload.points_to_add}).execute()
+        return {"message": "Reward claimed!"}
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        raise HTTPException(status_code=500, detail=f"Error claiming reward: {str(e)}")

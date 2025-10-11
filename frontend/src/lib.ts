@@ -20,3 +20,15 @@ export const getApiUrl = (path: string): string => {
     // It replaces any occurrence of '//' with '/', but ignores 'https://'.
     return finalUrl.replace(/([^:]\/)\/+/g, "$1");
 };
+
+export const trackUserAction = async (user_id: string, stat_type: string, value: number) => {
+  try {
+    await fetch(getApiUrl('/stats/update'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id, stat_type, value }),
+    });
+  } catch (error) {
+    console.error(`Failed to track action ${stat_type}:`, error);
+  }
+};

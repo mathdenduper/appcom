@@ -6,7 +6,7 @@ import { supabase } from '../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { getApiUrl } from '../../lib';
-import { BookOpenIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { BookOpenIcon, UserGroupIcon, StarIcon } from '@heroicons/react/24/outline';
 
 
 // --- Data Structures ---
@@ -136,7 +136,6 @@ export default function DashboardPage() {
     router.push('/');
   };
   
-  // --- NEW: Filter study sets into two lists ---
   const myOriginalSets = studySets.filter(set => !set.title.startsWith('(Shared)'));
   const sharedWithMeSets = studySets.filter(set => set.title.startsWith('(Shared)'));
 
@@ -170,56 +169,55 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1 min-h-0">
           
+          {/* --- FIXED SECTION BELOW --- */}
           <div className="flex flex-col min-h-0">
             <h2 className="text-2xl font-bold mb-4 flex-shrink-0">My Recent Study Sets</h2>
-            <div className="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col min-h-0">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col flex-1 min-h-0">
               
-              {/* --- Your Original Sets --- */}
-              <div className="flex-1 overflow-y-auto pr-2">
-                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2"><BookOpenIcon className="h-5 w-5"/> Your Sets</h3>
-                {myOriginalSets.length > 0 ? (
-                  <div className="space-y-3">
-                    {myOriginalSets.slice(0, 4).map(set => (
+              {/* --- Your Sets --- */}
+              <div className="flex flex-col flex-1 min-h-0 border-b border-gray-700 pb-4">
+                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2 flex-shrink-0">
+                  <BookOpenIcon className="h-5 w-5"/> Your Sets
+                </h3>
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {myOriginalSets.length > 0 ? (
+                    myOriginalSets.map(set => (
                       <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
                         <span>{set.title}</span>
                         <span className="text-gray-500">&gt;</span>
                       </Link>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-gray-500">You haven't created any sets yet.</p>}
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 pl-1">You haven't created any sets yet.</p>
+                  )}
+                </div>
               </div>
 
-              {/* --- Divider for shared sets (only if there are any) --- */}
-              {sharedWithMeSets.length > 0 && <hr className="border-gray-700 my-4"/>}
-
-              {/* --- Shared With You Sets --- */}
-              <div className="flex-1 overflow-y-auto pr-2">
-                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2"><UserGroupIcon className="h-5 w-5"/> Shared With You</h3>
-                {sharedWithMeSets.length > 0 ? (
-                  <div className="space-y-3">
-                    {sharedWithMeSets.slice(0, 4).map(set => (
+              {/* --- Shared With You --- */}
+              <div className="flex flex-col flex-1 min-h-0 pt-4">
+                <h3 className="text-lg font-semibold text-gray-400 mb-3 flex items-center gap-2 flex-shrink-0">
+                  <UserGroupIcon className="h-5 w-5"/> Shared With You
+                </h3>
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {sharedWithMeSets.length > 0 ? (
+                    sharedWithMeSets.slice(0, 8).map(set => (
                       <Link href={`/play/${set.id}`} key={set.id} className="block w-full text-left p-4 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors flex justify-between items-center">
                         <span className="truncate">{set.title.replace('(Shared) ', '')}</span>
                         <span className="text-gray-500">&gt;</span>
                       </Link>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-gray-500">No sets have been shared with you yet.</p>}
-              </div>
-
-              {myOriginalSets.length === 0 && sharedWithMeSets.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <p className="text-gray-400">You haven't created or received any study sets yet.</p>
-                  <Link href="/uploader" className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
-                    Create your first set
-                  </Link>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500 pl-1">No sets have been shared with you yet.</p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
+          {/* --- END FIXED SECTION --- */}
 
+
+          {/* Leaderboard remains unchanged */}
           <div className="flex flex-col min-h-0">
-            {/* ... (Your Leaderboard component remains unchanged here) ... */}
             <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 className="text-2xl font-bold">CR Leaderboard</h2>
                 <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
@@ -256,6 +254,9 @@ export default function DashboardPage() {
           <Link href="/results" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><ResultsIcon /> Results</Link>
           <Link href="/uploader" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><UploaderIcon /> Uploader</Link>
           <Link href="/sharing" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SharingIcon /> Sharing</Link>
+          <Link href="/quests" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700">
+            <StarIcon className="h-6 w-6"/> Quests
+          </Link>
           <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
         </div>
         <div className="mt-auto">
