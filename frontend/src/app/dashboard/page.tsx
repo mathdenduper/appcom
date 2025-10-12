@@ -1,3 +1,8 @@
+// Author: Tristan Bong
+// Page name: dashboard/page.tsx
+// Page purpose: Main dashboard for users
+// Date created: 14/09/2025
+
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
@@ -15,14 +20,14 @@ interface StudySet {
   created_at: string;
 }
 interface Profile {
-    id: string;
-    cr_score: number;
+  id: string;
+  cr_score: number;
 }
 interface LeaderboardEntry {
-    rank: number;
-    first_name: string | null;
-    last_name: string | null;
-    cr_score: number;
+  rank: number;
+  first_name: string | null;
+  last_name: string | null;
+  cr_score: number;
 }
 
 // --- Icons ---
@@ -32,53 +37,60 @@ const UploaderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" he
 const SharingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>;
 const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
 
-// --- Profile Menu ---
+// --- Profile Menu Component ---
 const ProfileMenu = ({ user: objUser, onLogout: fnOnLogout }: { user: User, onLogout: () => void }) => {
-    const [bIsOpen, setBIsOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-    const strFirstName = objUser.user_metadata?.first_name || '';
-    const strLastName = objUser.user_metadata?.last_name || '';
-    const strUserName = `${strFirstName} ${strLastName}`.trim() || objUser.email?.split('@')[0] || 'Student';
-    const strUserInitials = `${strFirstName.charAt(0)}${strLastName.charAt(0)}`.toUpperCase() || strUserName.substring(0, 2).toUpperCase();
+  const [bIsOpen, setBIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setBIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [menuRef]);
+  // INPUT: Derive user display name and initials from metadata
+  const strFirstName = objUser.user_metadata?.first_name || '';
+  const strLastName = objUser.user_metadata?.last_name || '';
+  const strUserName = `${strFirstName} ${strLastName}`.trim() || objUser.email?.split('@')[0] || 'Student';
+  const strUserInitials = `${strFirstName.charAt(0)}${strLastName.charAt(0)}`.toUpperCase() || strUserName.substring(0, 2).toUpperCase();
 
-    return (
-        <div className="relative" ref={menuRef}>
-            <button onClick={() => setBIsOpen(!bIsOpen)} className="flex items-center w-full space-x-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700">
-                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0">
-                    {strUserInitials}
-                </div>
-                <span className="font-semibold truncate">{strUserName}</span>
-            </button>
-            {bIsOpen && (
-                <div className="absolute bottom-full mb-2 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-2">
-                    <ul className="space-y-1">
-                        <li><Link href="/account" className="block px-3 py-2 text-gray-300 hover:bg-gray-700 rounded-md transition-colors">Account</Link></li>
-                        <li><button onClick={fnOnLogout} className="w-full text-left px-3 py-2 text-red-400 hover:bg-gray-700 rounded-md transition-colors">Logout</button></li>
-                    </ul>
-                </div>
-            )}
+  // PROCESS: Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setBIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef]);
+
+  // OUTPUT: Render user button with dropdown menu
+  return (
+    <div className="relative" ref={menuRef}>
+      <button onClick={() => setBIsOpen(!bIsOpen)} className="flex items-center w-full space-x-4 p-4 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors border border-gray-700">
+        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0">
+          {strUserInitials}
         </div>
-    );
+        <span className="font-semibold truncate">{strUserName}</span>
+      </button>
+      {bIsOpen && (
+        <div className="absolute bottom-full mb-2 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-2">
+          <ul className="space-y-1">
+            <li><Link href="/account" className="block px-3 py-2 text-gray-300 hover:bg-gray-700 rounded-md transition-colors">Account</Link></li>
+            <li><button onClick={fnOnLogout} className="w-full text-left px-3 py-2 text-red-400 hover:bg-gray-700 rounded-md transition-colors">Logout</button></li>
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 };
 
+// --- Utility Function ---
 const getOrdinalSuffix = (n: number) => {
-    const arrSuffix = ["th", "st", "nd", "rd"];
-    const nV = n % 100;
-    return arrSuffix[(nV - 20) % 10] || arrSuffix[nV] || arrSuffix[0];
+  // PROCESS: Return ordinal suffix for ranks
+  const arrSuffix = ["th", "st", "nd", "rd"];
+  const nV = n % 100;
+  return arrSuffix[(nV - 20) % 10] || arrSuffix[nV] || arrSuffix[0];
 };
 
 // --- Main Dashboard Page ---
 export default function DashboardPage() {
+  // INPUT: Initialize state for user, profile, study sets, leaderboard, loading, and time span filter
   const [objUser, setObjUser] = useState<User | null>(null);
   const [objProfile, setObjProfile] = useState<Profile | null>(null);
   const [bIsLoading, setBIsLoading] = useState(true);
@@ -87,69 +99,82 @@ export default function DashboardPage() {
   const [strTimeSpan, setStrTimeSpan] = useState<'daily' | 'weekly' | 'monthly' | 'yearly' | 'all_time'>('all_time');
   const router = useRouter();
 
+  // PROCESS: Fetch dashboard data (user, profile, study sets, leaderboard) on mount or time span change
   useEffect(() => {
     const fetchDashboardData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setObjUser(session.user);
-        
-        try {
-          const [profileResponse, setsResponse, leaderboardResponse] = await Promise.all([
-            supabase.from('profiles').select('id, cr_score').eq('id', session.user.id).single(),
-            fetch(getApiUrl(`/my-study-sets/${session.user.id}`)),
-            fetch(getApiUrl(`/leaderboard?timespan=${strTimeSpan}`))
-          ]);
-
-          if (profileResponse.error && profileResponse.error.code !== 'PGRST116') {
-              throw profileResponse.error;
-          }
-          setObjProfile(profileResponse.data);
-
-          if (!setsResponse.ok) throw new Error('Failed to fetch study sets.');
-          const arrSetsData = await setsResponse.json();
-          setArrStudySets(arrSetsData);
-          
-          if (!leaderboardResponse.ok) throw new Error('Failed to fetch leaderboard.');
-          const arrLeaderboardData = await leaderboardResponse.json();
-          setArrLeaderboard(arrLeaderboardData);
-
-        } catch (error) {
-          console.error("Error fetching dashboard data:", error);
-        }
-      } else {
+      if (!session?.user) {
         router.push('/login');
+        return;
       }
+
+      setObjUser(session.user);
+
+      try {
+        const [profileResponse, setsResponse, leaderboardResponse] = await Promise.all([
+          supabase.from('profiles').select('id, cr_score').eq('id', session.user.id).single(),
+          fetch(getApiUrl(`/my-study-sets/${session.user.id}`)),
+          fetch(getApiUrl(`/leaderboard?timespan=${strTimeSpan}`))
+        ]);
+
+        // PROCESS: Handle profile data
+        if (profileResponse.error && profileResponse.error.code !== 'PGRST116') {
+          throw profileResponse.error;
+        }
+        setObjProfile(profileResponse.data);
+
+        // PROCESS: Handle study sets
+        if (!setsResponse.ok) throw new Error('Failed to fetch study sets.');
+        const arrSetsData = await setsResponse.json();
+        setArrStudySets(arrSetsData);
+
+        // PROCESS: Handle leaderboard
+        if (!leaderboardResponse.ok) throw new Error('Failed to fetch leaderboard.');
+        const arrLeaderboardData = await leaderboardResponse.json();
+        setArrLeaderboard(arrLeaderboardData);
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      }
+
       setBIsLoading(false);
     };
 
     fetchDashboardData();
 
+    // PROCESS: Refresh dashboard when window gains focus
     const handleFocus = () => fetchDashboardData();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [router, strTimeSpan]);
 
+  // PROCESS: Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
   };
-  
+
+  // PROCESS: Separate study sets into original and shared
   const arrMyOriginalSets = arrStudySets.filter(set => !set.title.startsWith('(Shared)'));
   const arrSharedWithMeSets = arrStudySets.filter(set => set.title.startsWith('(Shared)'));
 
+  // OUTPUT: Loading screen
   if (bIsLoading) return <p className="text-center text-white pt-40">Loading your dashboard...</p>;
   if (!objUser) return null;
 
+  // INPUT: Extract user info for display
   const strFirstName = objUser.user_metadata?.first_name || '';
   const strLastName = objUser.user_metadata?.last_name || '';
   const strUserName = `${strFirstName} ${strLastName}`.trim() || objUser.email?.split('@')[0] || 'Student';
   const strUserInitials = (strFirstName.charAt(0) || '') + (strLastName.charAt(0) || '');
   const nCrScore = objProfile?.cr_score ?? 0;
-  
+
+  // OUTPUT: Render main dashboard UI
   return (
     <div className="h-screen bg-background text-white flex pt-20">
       {/* --- Main Content --- */}
       <div className="flex-1 p-8 flex flex-col min-h-0">
+        {/* User Profile Header */}
         <div className="flex items-center space-x-6 mb-8 flex-shrink-0">
           <div className="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center text-4xl font-bold flex-shrink-0">
             {strUserInitials.toUpperCase() || strUserName.substring(0, 2).toUpperCase()}
@@ -159,6 +184,8 @@ export default function DashboardPage() {
             <p className="text-gray-400 text-lg">{nCrScore} CR</p>
           </div>
         </div>
+
+        {/* --- Dashboard Grids --- */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1 min-h-0">
 
           {/* --- Recent Study Sets --- */}

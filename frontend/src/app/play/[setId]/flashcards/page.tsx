@@ -1,3 +1,8 @@
+// Author: Tristan Bong
+// Page name: flashcards/page.tsx
+// Page purpose: Allows users to study with flashcards
+// Date created: 14/09/2025
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -7,6 +12,7 @@ import Link from 'next/link';
 import { getApiUrl, trackUserAction } from '../../../../lib';
 import type { User } from '@supabase/supabase-js';
 
+// --- Data Structures ---
 interface StudyItem {
   id: string;
   question: string;
@@ -17,7 +23,12 @@ interface StudySet {
   title: string;
 }
 
+// --- Flashcards Page ---
 export default function FlashcardsPage() {
+  // INPUT:
+  // - URL param: setId
+  // - User session from Supabase
+  // - Study set data from API
   const [stSet, setStSet] = useState<StudySet | null>(null);
   const [astItems, setAstItems] = useState<StudyItem[]>([]);
   const [nCurrentIndex, setNCurrentIndex] = useState(0);
@@ -33,6 +44,7 @@ export default function FlashcardsPage() {
   const router = useRouter();
   const strSetId = params.setId as string;
 
+  // PROCESS: Fetch current user from Supabase
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -40,7 +52,8 @@ export default function FlashcardsPage() {
     };
     fetchUser();
   }, []);
-  
+
+  // PROCESS: Fetch study set and its items
   useEffect(() => {
     if (!strSetId) return;
     const fetchStudySet = async () => {
@@ -65,6 +78,7 @@ export default function FlashcardsPage() {
     fetchStudySet();
   }, [strSetId]);
 
+  // PROCESS: Award points for seen cards
   const awardPoints = async (nPoints: number) => {
     if (!usrCurrent) return;
     try {
@@ -92,6 +106,7 @@ export default function FlashcardsPage() {
     }
   }, [nCurrentIndex, astItems, usrCurrent]);
 
+  // PROCESS: Flip card and award points if flipped for first time
   const handleFlipCard = () => {
     if (astItems.length === 0 || !usrCurrent) return;
     const strCardId = astItems[nCurrentIndex].id;
@@ -104,6 +119,7 @@ export default function FlashcardsPage() {
     setBIsFlipped(!bIsFlipped);
   };
 
+  // PROCESS: Navigate cards
   const handlePreviousCard = useCallback(() => {
     if (bNavigating || nCurrentIndex === 0) return;
     setBNavigating(true);
@@ -124,6 +140,7 @@ export default function FlashcardsPage() {
     }, 300);
   }, [bNavigating, nCurrentIndex, astItems.length]);
 
+  // PROCESS: Keyboard shortcuts for flipping and navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === ' ') {
@@ -139,6 +156,7 @@ export default function FlashcardsPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNextCard, handlePreviousCard]);
 
+  // OUTPUT: Loading or error states
   if (bLoading) return <p className="text-center text-white pt-40">Loading study set...</p>;
   if (strError) return <p className="text-center text-red-400 pt-40">Error: {strError}</p>;
   if (!stSet || astItems.length === 0) {
@@ -150,6 +168,7 @@ export default function FlashcardsPage() {
     );
   }
 
+  // OUTPUT: Main flashcard interface
   const objCurrentItem = astItems[nCurrentIndex];
   const bIsFirstCard = nCurrentIndex === 0;
   const bIsLastCard = nCurrentIndex === astItems.length - 1;

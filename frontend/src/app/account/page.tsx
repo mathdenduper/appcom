@@ -1,5 +1,5 @@
 // Author: Tristan Bong
-// Page name: AccountPage.tsx
+// Page name: account/page.tsx
 // Page purpose: Allows users to update their name and password
 // Date created: 14/09/2025
 
