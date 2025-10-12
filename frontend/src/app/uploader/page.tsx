@@ -1,10 +1,17 @@
+// Author: Tristan Bong
+// Page name: uploader/page.tsx
+// Page purpose: Allows users to upload PDFs or paste notes to generate a study set using AI
+// Date created: 14/09/2025
+
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import { getApiUrl } from '../../lib';
 
+// ---------- COMPONENT: UPLOAD ICON ----------
 const UploadIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -13,7 +20,9 @@ const UploadIcon = () => (
   </svg>
 );
 
+// ---------- MAIN PAGE COMPONENT ----------
 export default function UploaderPage() {
+  // --- State ---
   const [objUser, setObjUser] = useState<User | null>(null);
   const [bLoadingUser, setBLoadingUser] = useState(true);
   const router = useRouter();
@@ -24,6 +33,7 @@ export default function UploaderPage() {
   const [bIsProcessing, setBIsProcessing] = useState(false);
   const [strError, setStrError] = useState<string | null>(null);
 
+  // --- EFFECT: CHECK LOGGED-IN USER ---
   useEffect(() => {
     const fnCheckUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -37,6 +47,7 @@ export default function UploaderPage() {
     fnCheckUser();
   }, [router]);
 
+  // --- HANDLERS ---
   const fnHandleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setObjFile(e.target.files[0]);
@@ -45,6 +56,7 @@ export default function UploaderPage() {
   };
 
   const fnHandleGenerate = async () => {
+    // INPUT validation
     if (!objUser) { setStrError('You must be logged in.'); return; }
     if (!strTitle.trim()) { setStrError('Please enter a title.'); return; }
     if (!objFile && !strText.trim()) { setStrError('Please upload a file or paste notes.'); return; }
@@ -52,6 +64,7 @@ export default function UploaderPage() {
     setBIsProcessing(true);
     setStrError(null);
 
+    // PROCESS
     const formData = new FormData();
     formData.append('title', strTitle);
     formData.append('user_id', objUser.id);
@@ -64,6 +77,7 @@ export default function UploaderPage() {
       const res = await fetch(strApiUrl, { method: 'POST', body: formData });
       const objResult = await res.json();
       if (!res.ok) throw new Error(objResult.detail || 'An error occurred.');
+      // OUTPUT
       router.push(`/play/${objResult.study_set_id}`);
     } catch (err: any) {
       setStrError(err.message);
@@ -81,7 +95,9 @@ export default function UploaderPage() {
       <div className="w-full max-w-2xl">
         <h1 className="text-4xl font-bold text-center mb-2">Create a New Study Set</h1>
         <p className="text-gray-400 text-center mb-8">Upload a PDF or paste your notes to get started.</p>
+
         <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl space-y-6">
+          {/* Title Input */}
           <input
             type="text"
             placeholder="Enter a title..."
@@ -89,6 +105,8 @@ export default function UploaderPage() {
             onChange={(e) => setStrTitle(e.target.value)}
             className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
           />
+
+          {/* File Upload */}
           <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center">
             <label htmlFor="file-upload" className="cursor-pointer">
               <div className="flex flex-col items-center text-gray-400">
@@ -104,13 +122,18 @@ export default function UploaderPage() {
               />
             </label>
           </div>
+
           <div className="text-center text-gray-500">OR</div>
+
+          {/* Textarea for notes */}
           <textarea
             value={strText}
             onChange={(e) => { setStrText(e.target.value); setObjFile(null); }}
             placeholder="Paste your notes directly here..."
             className="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-4 text-gray-300 focus:ring-2 focus:ring-purple-500"
           />
+
+          {/* Generate Button */}
           <button
             onClick={fnHandleGenerate}
             disabled={bIsProcessing}
@@ -118,6 +141,7 @@ export default function UploaderPage() {
           >
             {bIsProcessing ? 'Generating Your Study Set...' : 'Generate with AI'}
           </button>
+
           {strError && <p className="text-red-400 text-center mt-4">{strError}</p>}
         </div>
       </div>

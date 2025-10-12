@@ -1,48 +1,72 @@
-'use client'; 
+// Author: Tristan Bong
+// Page name: app/page.tsx
+// Page purpose: Home page displaying the landing hero, demo preview, and live server connection status
+// Date created: 14/09/2025
+
+// Input: None (except automatic API call to backend)
+// Process: Displays a typewriter hero section, interactive AI demo preview, and fetches connection message
+// Output: Full landing page with interactive UI and API connection status
+
+'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getApiUrl } from '../lib'; // Import our new helper
+import { getApiUrl } from '../lib';
 
+// Component: Typewriter
+// Purpose: Creates a looping typing/deleting text animation
+// Input: arrWords (array of words to animate)
+// Process: Types each word letter by letter, pauses, deletes it, then moves to next word
+// Output: Animated text element simulating typing
 const Typewriter = ({ words: arrWords }: { words: string[] }) => {
-    const [iWordIndex, setIWordIndex] = useState(0);
-    const [iCharIndex, setICharIndex] = useState(0);
-    const [bIsDeleting, setBIsDeleting] = useState(false);
-    const [bIsPaused, setBIsPaused] = useState(false);
-    const [strCurrentText, setStrCurrentText] = useState('');
-    const iTypingSpeed = 100;
-    const iDeletingSpeed = 50;
-    const iPauseDelay = 2000;
+  const [iWordIndex, setIWordIndex] = useState(0);
+  const [iCharIndex, setICharIndex] = useState(0);
+  const [bIsDeleting, setBIsDeleting] = useState(false);
+  const [bIsPaused, setBIsPaused] = useState(false);
+  const [strCurrentText, setStrCurrentText] = useState('');
+  const iTypingSpeed = 100;
+  const iDeletingSpeed = 50;
+  const iPauseDelay = 2000;
 
-    useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
-        if (bIsPaused) {
-            timeoutId = setTimeout(() => { setBIsPaused(false); setBIsDeleting(true); }, iPauseDelay);
-        } else if (bIsDeleting) {
-            if (iCharIndex > 0) {
-                timeoutId = setTimeout(() => setICharIndex(iCharIndex - 1), iDeletingSpeed);
-            } else {
-                setBIsDeleting(false);
-                setIWordIndex((prev) => (prev + 1) % arrWords.length);
-            }
-        } else {
-            if (iCharIndex < arrWords[iWordIndex].length) {
-                timeoutId = setTimeout(() => setICharIndex(iCharIndex + 1), iTypingSpeed);
-            } else {
-                setBIsPaused(true);
-            }
-        }
-        setStrCurrentText(arrWords[iWordIndex].substring(0, iCharIndex));
-        return () => clearTimeout(timeoutId);
-    }, [iCharIndex, iWordIndex, bIsDeleting, bIsPaused, arrWords]);
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-    return (
-        <span className="text-purple-400">
-            {strCurrentText}
-            <span className={`typewriter-cursor ${bIsPaused ? 'blinking' : ''}`}></span>
-        </span>
-    );
+    if (bIsPaused) {
+      timeoutId = setTimeout(() => {
+        setBIsPaused(false);
+        setBIsDeleting(true);
+      }, iPauseDelay);
+    } else if (bIsDeleting) {
+      if (iCharIndex > 0) {
+        timeoutId = setTimeout(() => setICharIndex(iCharIndex - 1), iDeletingSpeed);
+      } else {
+        setBIsDeleting(false);
+        setIWordIndex(prev => (prev + 1) % arrWords.length);
+      }
+    } else {
+      if (iCharIndex < arrWords[iWordIndex].length) {
+        timeoutId = setTimeout(() => setICharIndex(iCharIndex + 1), iTypingSpeed);
+      } else {
+        setBIsPaused(true);
+      }
+    }
+
+    setStrCurrentText(arrWords[iWordIndex].substring(0, iCharIndex));
+    return () => clearTimeout(timeoutId);
+  }, [iCharIndex, iWordIndex, bIsDeleting, bIsPaused, arrWords]);
+
+  return (
+    <span className="text-purple-400">
+      {strCurrentText}
+      <span className={`typewriter-cursor ${bIsPaused ? 'blinking' : ''}`}></span>
+    </span>
+  );
 };
 
+// Component: Hero
+// Purpose: Displays the main introduction with typewriter text and CTA buttons
+// Input: None
+// Process: Shows app name, animated text, and navigation links
+// Output: Hero section of the landing page
 const Hero = () => {
   return (
     <div className="h-screen flex flex-col justify-center items-center text-center">
@@ -54,10 +78,16 @@ const Hero = () => {
         <Typewriter words={['subject', 'lecture', 'exam', 'topic']} />
       </p>
       <div className="mt-10 flex justify-center items-center gap-4">
-        <Link href="/signup" className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105">
+        <Link
+          href="/signup"
+          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-transform transform hover:scale-105"
+        >
           Get Started - It's Free
         </Link>
-        <a href="#ai-preview" className="bg-transparent border-2 border-gray-700 hover:border-purple-600 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors">
+        <a
+          href="#ai-preview"
+          className="bg-transparent border-2 border-gray-700 hover:border-purple-600 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg text-lg transition-colors"
+        >
           See how it works
         </a>
       </div>
@@ -65,40 +95,51 @@ const Hero = () => {
   );
 };
 
+// Component: Demo
+// Purpose: Allows users to paste notes and preview AI flashcard generation
+// Input: None
+// Process: Displays a text area and a mock preview area
+// Output: Interactive preview section (non-functional placeholder for now)
 const Demo = () => {
-    return (
-        <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
-            <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-white">Try the AI Instantly</h2>
-                <p className="text-lg text-gray-400 mt-4">Paste some of your notes below to see a live preview.</p>
-            </div>
-            <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-start">
-                <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
-                    <textarea 
-                        className="w-full h-64 bg-gray-800 border border-gray-700 rounded-lg p-4 text-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition"
-                        placeholder="Paste your notes here..."
-                    ></textarea>
-                    <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors">
-                        Generate Preview
-                    </button>
-                </div>
-                <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 min-h-[344px]">
-                    <h3 className="font-semibold text-white text-lg mb-4">Generated Flashcards:</h3>
-                    <div className="space-y-3 text-gray-400">
-                        <p className="italic">Your AI-generated preview will appear here...</p>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
+      <div className="text-center mb-12">
+        <h2 className="text-4xl font-bold text-white">Try the AI Instantly</h2>
+        <p className="text-lg text-gray-400 mt-4">
+          Paste some of your notes below to see a live preview.
+        </p>
+      </div>
+      <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-start">
+        <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
+          <textarea
+            className="w-full h-64 bg-gray-800 border border-gray-700 rounded-lg p-4 text-gray-300 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 transition"
+            placeholder="Paste your notes here..."
+          ></textarea>
+          <button className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition-colors">
+            Generate Preview
+          </button>
         </div>
-    );
+        <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 min-h-[344px]">
+          <h3 className="font-semibold text-white text-lg mb-4">Generated Flashcards:</h3>
+          <div className="space-y-3 text-gray-400">
+            <p className="italic">Your AI-generated preview will appear here...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
+// Page Component: Home
+// Purpose: Main landing page combining Hero, Demo, and Footer
+// Input: None (fetches from backend automatically)
+// Process: Fetches connection message from backend API, displays it below the demo section
+// Output: Fully rendered landing page with connection status message
 export default function Home() {
   const [strMessage, setStrMessage] = useState('Connecting to the server...');
 
   useEffect(() => {
-    const strApiUrl = getApiUrl('/'); // Use the helper for the root check
-    
+    const strApiUrl = getApiUrl('/');
     fetch(strApiUrl)
       .then(response => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -106,8 +147,8 @@ export default function Home() {
       })
       .then(objData => setStrMessage(objData.message))
       .catch(err => {
-        console.error("Failed to fetch from API:", err);
-        setStrMessage("Failed to connect.");
+        console.error('Failed to fetch from API:', err);
+        setStrMessage('Failed to connect.');
       });
   }, []);
 
@@ -116,7 +157,7 @@ export default function Home() {
       <Hero />
       <Demo />
       <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
-          <p>Connection Status: {strMessage}</p>
+        <p>Connection Status: {strMessage}</p>
       </footer>
     </div>
   );

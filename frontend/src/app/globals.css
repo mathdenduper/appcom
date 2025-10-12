@@ -1,3 +1,10 @@
+/* Author: Tristan Bong
+   Page name: globals.css
+   Page purpose: Creates CSS for the rest of the application.
+   Date created: 14/09/2025 */
+
+/* No IPO for this file as this file is fully UI */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -22,8 +29,8 @@ body {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background-color: #a9a3c2; /* Muted lavender colour */
-  margin-left: 2px; /* CORRECTED: Reduced distance from the text */
+  background-color: #a9a3c2;
+  margin-left: 2px;
   vertical-align: middle;
 }
 
@@ -36,7 +43,7 @@ body {
 
 /* This class adds the blinking animation when applied */
 .typewriter-cursor.blinking {
-  animation: blink 1s infinite; /* CORRECTED: Slowed down the blinking speed */
+  animation: blink 1s infinite;
 }
 
 /* --- Card Flip Animation Utilities --- */
