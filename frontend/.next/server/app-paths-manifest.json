@@ -3,5 +3,6 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/play/[setId]/page": "app/play/[setId]/page.js",
   "/play/[setId]/quiz/page": "app/play/[setId]/quiz/page.js",
-  "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js"
+  "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js",
+  "/sets/page": "app/sets/page.js"
 }

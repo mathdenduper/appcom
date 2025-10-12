@@ -1,3 +1,8 @@
+// Author: Tristan Bong
+// Page name: Header.tsx
+// Page purpose: Displays site header with navigation, user menu, and inbox popover
+// Date created: 14/09/2025
+
 'use client';
 
 import { useEffect, useState, Fragment } from 'react';
@@ -10,24 +15,26 @@ import { ChevronDownIcon, EnvelopeIcon, CheckCircleIcon, XCircleIcon } from '@he
 import LogoLink from './LogoLink';
 import { getApiUrl } from '@/lib';
 
-// --- INBOX POPOUT COMPONENT (WITH DECLINED STATE) ---
 function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) {
-  const [arrShares, setArrShares] = useState<any[]>([]);
-  const [bLoading, setBLoading] = useState(true);
+  // INPUT: current user object
+  const [arrShares, setArrShares] = useState<any[]>([]); // PROCESS: fetched shares
+  const [bLoading, setBLoading] = useState(true);       // PROCESS: loading state
 
+  // PROCESS: Fetch inbox shares for user
   const fetchSharesInternal = async () => {
     setBLoading(true);
     try {
-      const responseInternal = await fetch(getApiUrl(`/shares/inbox/${user.id}`));
+      const responseInternal = await fetch(getApiUrl(`/shares/inbox/${user.id}`)); // INPUT: user.id
       if (!responseInternal.ok) throw new Error('Failed to fetch shares');
       const arrData = await responseInternal.json();
-      setArrShares(arrData);
+      setArrShares(arrData); // OUTPUT: update state with fetched shares
     } catch (errInternal) {
       console.error(errInternal);
     }
     setBLoading(false);
   };
   
+  // PROCESS: Accept or decline a share
   const handleActionInternal = async (objShare: any, strAction: 'accept' | 'decline') => {
       let strEndpoint = '';
       let objPayload: any = {};
@@ -50,16 +57,18 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(objPayload),
         });
-        fetchSharesInternal();
-        onAction();
+        fetchSharesInternal(); // PROCESS: refresh inbox
+        onAction();            // OUTPUT: trigger parent update
       } catch (errInternal) {
         console.error(`Failed to ${strAction} share:`, errInternal);
-        alert(`Failed to ${strAction} share.`);
+        alert(`Failed to ${strAction} share.`); // OUTPUT: alert user
       }
   };
 
+  // PROCESS: Count unread shares
   const nUnreadCount = arrShares.filter(s => s.status === 'pending').length;
 
+  // OUTPUT: Inbox button and popover
   return (
     <Popover className="relative">
       {({ open }) => (
@@ -71,10 +80,11 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
             <EnvelopeIcon className="h-6 w-6" />
             {nUnreadCount > 0 && (
               <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-600 ring-2 ring-gray-800 text-xs font-bold flex items-center justify-center">
-                {nUnreadCount}
+                {nUnreadCount} {/* OUTPUT: unread count */}
               </span>
             )}
           </Popover.Button>
+
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"
@@ -89,8 +99,9 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
                 <h3 className="text-lg font-semibold text-white">Inbox</h3>
               </div>
               <div className="p-2 max-h-96 overflow-y-auto">
-                {bLoading ? <p className="text-center text-gray-300 py-4">Loading...</p>
-                : arrShares.length > 0 ? (
+                {bLoading ? (
+                  <p className="text-center text-gray-300 py-4">Loading...</p> // OUTPUT: loading state
+                ) : arrShares.length > 0 ? (
                   <ul className="space-y-2">
                     {arrShares.map((objShare) => (
                       <li key={objShare.id} className={`p-3 rounded-md ${objShare.status !== 'pending' ? 'opacity-60' : 'bg-gray-700/50'}`}>
@@ -98,28 +109,30 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
                         <p className="text-sm text-gray-300">
                           From: {objShare.sender_first_name || 'Unknown'} {objShare.sender_last_name || ''}
                         </p>
-                        
+
                         {objShare.status === 'accepted' && (
                           <div className="mt-2 flex items-center gap-2 text-green-400 text-xs">
                             <CheckCircleIcon className="h-4 w-4" />
-                            <span>Accepted</span>
+                            <span>Accepted</span> {/* OUTPUT: accepted label */}
                           </div>
                         )}
 
                         {objShare.status === 'declined' && (
                           <div className="mt-2 flex items-center gap-2 text-red-400 text-xs">
                             <XCircleIcon className="h-4 w-4" />
-                            <span>Declined</span>
+                            <span>Declined</span> {/* OUTPUT: declined label */}
                           </div>
                         )}
 
                         {objShare.status === 'pending' && (
                           <div className="mt-2 flex items-center gap-2">
+                            {/* INPUT/PROCESS: Decline button */}
                             <button 
                               onClick={() => handleActionInternal(objShare, 'decline')}
                               className="flex-1 px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md transition-colors">
                               Decline
                             </button>
+                            {/* INPUT/PROCESS: Accept button */}
                             <button 
                               onClick={() => handleActionInternal(objShare, 'accept')}
                               className="flex-1 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md transition-colors">
@@ -131,7 +144,7 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-center text-gray-300 py-8">Your inbox is empty.</p>
+                  <p className="text-center text-gray-300 py-8">Your inbox is empty.</p> // OUTPUT: empty inbox
                 )}
               </div>
             </Popover.Panel>
@@ -145,12 +158,13 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
 
 // --- HEADER COMPONENT ---
 export default function Header() {
-  const [objUser, setObjUser] = useState<User | null>(null);
-  const [arrInboxShares, setArrInboxShares] = useState<any[]>([]);
-  const [bInboxLoading, setBInboxLoading] = useState(true);
+  const [objUser, setObjUser] = useState<User | null>(null); // INPUT: current user
+  const [arrInboxShares, setArrInboxShares] = useState<any[]>([]); // PROCESS: inbox data
+  const [bInboxLoading, setBInboxLoading] = useState(true); // PROCESS: loading state
   const router = useRouter();
   const strPathname = usePathname();
 
+  // PROCESS: Fetch inbox shares for current user
   const fetchInboxInternal = async (currentUser: User) => {
     if (!currentUser) return;
     setBInboxLoading(true);
@@ -158,13 +172,14 @@ export default function Header() {
       const responseInternal = await fetch(getApiUrl(`/shares/inbox/${currentUser.id}`));
       if (!responseInternal.ok) throw new Error('Failed to fetch shares');
       const arrData = await responseInternal.json();
-      setArrInboxShares(arrData);
+      setArrInboxShares(arrData); // OUTPUT: set inbox shares state
     } catch (errInternal) {
       console.error(errInternal);
     }
     setBInboxLoading(false);
   };
   
+  // PROCESS: Subscribe to auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setObjUser(session?.user ?? null);
@@ -174,22 +189,25 @@ export default function Header() {
         setArrInboxShares([]);
       }
     });
+
+    // PROCESS: Get initial user on page load
     const getInitialUserInternal = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         setObjUser(user);
-        if (user) {
-            fetchInboxInternal(user);
-        }
-    }
+        if (user) fetchInboxInternal(user);
+    };
     getInitialUserInternal();
+
     return () => subscription?.unsubscribe();
   }, []);
 
+  // PROCESS: Sign out user
   const handleSignOutInternal = async () => {
     await supabase.auth.signOut();
-    router.push('/');
+    router.push('/'); // OUTPUT: redirect to home
   };
 
+  // PROCESS/OUTPUT: Get user initials
   const getInitialsInternal = () => {
     const strFirstName = objUser?.user_metadata?.first_name || '';
     const strLastName = objUser?.user_metadata?.last_name || '';
@@ -199,21 +217,22 @@ export default function Header() {
     return objUser?.email?.[0].toUpperCase() || '';
   };
 
-  const bIsHomePage = strPathname === '/';
+  const bIsHomePage = strPathname === '/'; // PROCESS: determine if on homepage
 
+  // RENDER: Header with navigation and user menu
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-black bg-opacity-30 backdrop-blur-lg border-b border-gray-800">
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <LogoLink />
+        <LogoLink /> {/* OUTPUT: site logo */}
         <div className="flex items-center space-x-4">
           {objUser && !bIsHomePage ? (
             <div className="flex items-center space-x-4">
-              <InboxPopover user={objUser} onAction={() => objUser && fetchInboxInternal(objUser)} />
+              <InboxPopover user={objUser} onAction={() => objUser && fetchInboxInternal(objUser)} /> {/* OUTPUT: inbox popover */}
               <Menu as="div" className="relative">
                 <div>
                   <Menu.Button className="flex items-center text-sm rounded-full text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                     <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">
-                      {getInitialsInternal()}
+                      {getInitialsInternal()} {/* OUTPUT: user initials */}
                     </div>
                   </Menu.Button>
                 </div>
@@ -222,14 +241,14 @@ export default function Header() {
                      <Menu.Item>
                         {({ active }) => (
                           <Link href="/account" className={`${active ? 'bg-gray-700' : ''} block px-4 py-2 text-sm text-gray-300`}>
-                            Account
+                            Account {/* OUTPUT: account link */}
                           </Link>
                         )}
                       </Menu.Item>
                     <Menu.Item>
                        {({ active }) => (
                         <button onClick={handleSignOutInternal} className={`${active ? 'bg-gray-700' : ''} w-full text-left block px-4 py-2 text-sm text-red-400`}>
-                          Sign out
+                          Sign out {/* OUTPUT: sign out button */}
                         </button>
                       )}
                     </Menu.Item>
@@ -240,10 +259,10 @@ export default function Header() {
           ) : (
             <>
               <Link href="/login" className="text-gray-300 hover:text-white transition-colors">
-                Sign In
+                Sign In {/* OUTPUT: sign in link */}
               </Link>
               <Link href="/signup" className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                Sign Up
+                Sign Up {/* OUTPUT: sign up link */}
               </Link>
             </>
           )}
