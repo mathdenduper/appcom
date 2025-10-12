@@ -18,22 +18,28 @@ export default function AccountPage() {
   const [bIsLoading, setBIsLoading] = useState(true);
   const router = useRouter();
 
-  // INPUT & PROCESS: name update fields
+  // INPUT: name update fields
   const [strFirstName, setStrFirstName] = useState('');
   const [strLastName, setStrLastName] = useState('');
+
+  // PROCESS: name update messaging and state control
   const [strNameMessage, setStrNameMessage] = useState<string | null>(null);
   const [strNameError, setStrNameError] = useState<string | null>(null);
   const [bIsNameUpdating, setBIsNameUpdating] = useState(false);
 
-  // INPUT & PROCESS: password change fields
+  // INPUT: password change fields
   const [strPassword, setStrPassword] = useState('');
   const [strConfirmPassword, setStrConfirmPassword] = useState('');
+
+  // PROCESS: password messaging and state control
   const [strPasswordMessage, setStrPasswordMessage] = useState<string | null>(null);
   const [strPasswordError, setStrPasswordError] = useState<string | null>(null);
   const [bIsPasswordUpdating, setBIsPasswordUpdating] = useState(false);
 
   // Function: Checks user session and preloads data
-  // PROCESS: verifies login, loads user info, redirects if not logged in
+  // INPUT: user session
+  // PROCESS: verifies login, loads metadata, redirects if not logged in
+  // OUTPUT: loads user info or sends user to login
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -65,12 +71,17 @@ export default function AccountPage() {
       const response = await fetch(strApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: objUser.id, first_name: strFirstName, last_name: strLastName }),
+        body: JSON.stringify({
+          user_id: objUser.id,
+          first_name: strFirstName,
+          last_name: strLastName,
+        }),
       });
+
       const objResult = await response.json();
       if (!response.ok) throw new Error(objResult.detail || 'Failed to update profile.');
 
-      setStrNameMessage('Success! Your name has been updated.'); // OUTPUT: success feedback to user
+      setStrNameMessage('Success! Your name has been updated.'); // OUTPUT: success feedback
       await supabase.auth.refreshSession(); // PROCESS: refresh session data
       setTimeout(() => router.push('/dashboard'), 1500); // OUTPUT: redirect after update
     } catch (err: any) {
@@ -86,10 +97,12 @@ export default function AccountPage() {
   // OUTPUT: success or error feedback
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (strPassword !== strConfirmPassword) {
       setStrPasswordError('Passwords do not match.'); // OUTPUT: validation message
       return;
     }
+
     if (strPassword.length < 8) {
       setStrPasswordError('Password must be at least 8 characters long.'); // OUTPUT: validation message
       return;
@@ -126,7 +139,7 @@ export default function AccountPage() {
     <div className="min-h-screen bg-background text-white pt-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">Account Settings</h1>
-        
+
         {/* Section: Update Name */}
         <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-2xl mb-8">
           <h2 className="text-2xl font-bold mb-4">Update Your Name</h2>
@@ -154,10 +167,10 @@ export default function AccountPage() {
               disabled={bIsNameUpdating} // PROCESS: disables button during submission
               className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
             >
-              {bIsNameUpdating ? 'Updating...' : 'Save Name'} {/* OUTPUT: button text based on state */}
+              {bIsNameUpdating ? 'Updating...' : 'Save Name'} {/* OUTPUT: button text */}
             </button>
-            {strNameError && <p className="text-red-400 text-center">{strNameError}</p>} {/* OUTPUT: display name update error */}
-            {strNameMessage && <p className="text-green-400 text-center">{strNameMessage}</p>} {/* OUTPUT: display name update success */}
+            {strNameError && <p className="text-red-400 text-center">{strNameError}</p>} {/* OUTPUT: name update error */}
+            {strNameMessage && <p className="text-green-400 text-center">{strNameMessage}</p>} {/* OUTPUT: name update success */}
           </form>
         </div>
 
@@ -168,16 +181,16 @@ export default function AccountPage() {
             <input
               type="password"
               placeholder="New password"
-              value={strPassword} // INPUT: new password from user
-              onChange={(e) => setStrPassword(e.target.value)} // PROCESS: updates password state
+              value={strPassword} // INPUT: new password
+              onChange={(e) => setStrPassword(e.target.value)} // PROCESS: updates password
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
             <input
               type="password"
               placeholder="Confirm new password"
-              value={strConfirmPassword} // INPUT: confirm password field
-              onChange={(e) => setStrConfirmPassword(e.target.value)} // PROCESS: updates confirmation state
+              value={strConfirmPassword} // INPUT: confirmation password
+              onChange={(e) => setStrConfirmPassword(e.target.value)} // PROCESS: updates confirmation
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
@@ -186,10 +199,10 @@ export default function AccountPage() {
               disabled={bIsPasswordUpdating} // PROCESS: disables button during update
               className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
             >
-              {bIsPasswordUpdating ? 'Updating...' : 'Change Password'} {/* OUTPUT: show button status */}
+              {bIsPasswordUpdating ? 'Updating...' : 'Change Password'} {/* OUTPUT: button text */}
             </button>
-            {strPasswordError && <p className="text-red-400 text-center">{strPasswordError}</p>} {/* OUTPUT: display password error */}
-            {strPasswordMessage && <p className="text-green-400 text-center">{strPasswordMessage}</p>} {/* OUTPUT: display password success */}
+            {strPasswordError && <p className="text-red-400 text-center">{strPasswordError}</p>} {/* OUTPUT: password error */}
+            {strPasswordMessage && <p className="text-green-400 text-center">{strPasswordMessage}</p>} {/* OUTPUT: password success */}
           </form>
         </div>
       </div>
