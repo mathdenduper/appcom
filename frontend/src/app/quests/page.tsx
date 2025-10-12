@@ -1,7 +1,7 @@
 // Author: Tristan Bong
 // Page name: quests/page.tsx
 // Page purpose: Displays daily quests, tracks progress, and lets users claim rewards.
-// Date created: 12/10/2025
+// Date created: 14/09/2025
 
 'use client';
 

@@ -1,6 +1,6 @@
 // Author: Tristan Bong
 // Page name: signup/page.tsx
-// Page purpose: Signup page for new users; displays the AuthForm in signup mode.
+// Page purpose: Signup page for new users. Displays the AuthForm in signup mode.
 // Date created: 14/09/2025
 
 'use client';

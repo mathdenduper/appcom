@@ -1,7 +1,7 @@
 // Author: Tristan Bong
 // Page name: sharing/page.tsx
 // Page purpose: Allows users to share their study sets with other users and view sent shares.
-// Date created: 12/10/2025
+// Date created: 14/09/2025
 
 'use client';
 

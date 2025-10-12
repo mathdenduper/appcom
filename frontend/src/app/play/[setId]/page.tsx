@@ -10,13 +10,13 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getApiUrl } from '../../../lib';
 
-// --- Data Structure for the Study Set ---
+// Data Structure for the Study Set
 interface StudySet {
   id: string;
   title: string;
 }
 
-// --- Icon Components ---
+// Icon Components
 const FlashcardIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -44,7 +44,7 @@ const TimedGameIcon = () => (
   </svg>
 );
 
-// --- Main Page Component ---
+// Main Page Component
 // Function purpose: Displays the study hub for a selected study set with mode options (Flashcards, Quiz, Timed Game)
 export default function GameSelectPage() {
 
@@ -57,7 +57,7 @@ export default function GameSelectPage() {
   const params = useParams();
   const strSetId = params.setId as string;
 
-  // --- Fetch Study Set Info ---
+  // Fetch Study Set Info
   // Function purpose: Fetches study set data from API based on setId
   useEffect(() => {
     if (!strSetId) return;
@@ -98,7 +98,7 @@ export default function GameSelectPage() {
     fetchStudySetInfo();
   }, [strSetId]);
 
-  // --- Conditional Renders (Outputs based on process states) ---
+  // Conditional Renders (Outputs based on process states)
 
   // OUTPUT: Loading screen
   if (bLoading) return <p className="text-center text-white pt-40">Loading study hub...</p>;
@@ -116,7 +116,7 @@ export default function GameSelectPage() {
     );
   }
 
-  // --- MAIN OUTPUT: Study Hub Interface ---
+  // MAIN OUTPUT: Study Hub Interface
   return (
     <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center pt-24 px-4">
       <div className="w-full max-w-2xl text-center">

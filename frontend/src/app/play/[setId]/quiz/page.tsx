@@ -144,7 +144,7 @@ export default function QuizPage() {
     }
   };
 
-  // --- Conditional rendering (OUTPUT) ---
+  // OUTPUT: Conditional rendering
   if (bLoading) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center">

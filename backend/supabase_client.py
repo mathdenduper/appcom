@@ -1,9 +1,13 @@
-# backend/supabase_client.py
+# Author: Tristan Bong
+# Page name: supabase_client.py
+# Page purpose: Runs the program's backend
+# Date created: 14/09
+
 import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-# This line loads the environment variables from your .env file
+# Loads the environment variables from the .env file
 load_dotenv()
 
 strSupabaseUrl: str = os.environ.get("SUPABASE_URL")
