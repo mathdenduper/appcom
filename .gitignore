@@ -25,3 +25,11 @@ yarn-error.log*
 # Python caches
 __pycache__/
 *.py[cod]
+
+/pseudo
+run_details.txt
+package-lock.json
+package.json
+Caddyfile
+/backend/package-lock.json
+/backend/__pycache__/
