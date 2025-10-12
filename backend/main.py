@@ -6,7 +6,7 @@
 # Importing libraries
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from supabase_client import supabase
 import PyPDF2
 from io import BytesIO
@@ -120,58 +120,85 @@ def generateQuizFromAI(strText: str):
 
 
 # --- Data Models ---
+
+ConfigBase = {
+    # Allows both the alias (snake_case from frontend) and the field name (camelCase in Python) to be used.
+    "populate_by_name": True 
+}
+
 class UserCredentials(BaseModel):
     strEmail: EmailStr # INPUT: Email string
     strPassword: str # INPUT: Password string
 
 # ALL INPUT:
 
+class UserCredentials(BaseModel):
+    # For signup/login, FastAPI automatically handles email/password
+    strEmail: EmailStr = Field(alias="email")
+    strPassword: str = Field(alias="password")
+    model_config = ConfigBase
+
 class QuizResultPayload(BaseModel):
-    strUserId: str
-    strSetId: str
-    intScore: int
-    intTotalQuestions: int
-    intPointsToAdd: int
+    strUserId: str = Field(alias="user_id")
+    strSetId: str = Field(alias="set_id")
+    intScore: int = Field(alias="score")
+    intTotalQuestions: int = Field(alias="total_questions")
+    intPointsToAdd: int = Field(alias="points_to_add")
+    model_config = ConfigBase
 
 class UpdateProfilePayload(BaseModel):
-    strUserId: str
-    strFirstName: str
-    strLastName: str
+    # This is the fix for your 422 error
+    strUserId: str = Field(alias="user_id")
+    strFirstName: str = Field(alias="first_name")
+    strLastName: str = Field(alias="last_name")
+    model_config = ConfigBase
 
 class AwardCrPayload(BaseModel):
-    strUserId: str
-    intPointsToAdd: int
+    strUserId: str = Field(alias="user_id")
+    intPointsToAdd: int = Field(alias="points_to_add")
+    model_config = ConfigBase
 
 class SharePayload(BaseModel):
-    strSenderId: str
-    strRecipientId: str
-    strStudySetId: str
+    strSenderId: str = Field(alias="sender_id")
+    strRecipientId: str = Field(alias="recipient_id")
+    strStudySetId: str = Field(alias="study_set_id")
+    model_config = ConfigBase
 
 class AcceptSharePayload(BaseModel):
-    strShareId: str
-    strRecipientId: str
-    strStudySetId: str
+    strShareId: str = Field(alias="share_id")
+    strRecipientId: str = Field(alias="recipient_id")
+    strStudySetId: str = Field(alias="study_set_id")
+    
+    # Define config directly inside the class
+    model_config = {
+        "populate_by_name": True 
+    }
 
 class DeclineSharePayload(BaseModel):
-    strShareId: str
+    strShareId: str = Field(alias="share_id")
+    model_config = ConfigBase
 
 class DeletePayload(BaseModel):
-    strUserId: str
+    strUserId: str = Field(alias="user_id")
+    model_config = ConfigBase
 
 class QuestCompletionPayload(BaseModel):
-    strUserId: str
-    strQuestType: str
-    intValue: int
+    strUserId: str = Field(alias="user_id")
+    strQuestType: str = Field(alias="quest_type")
+    intValue: int = Field(alias="value")
+    model_config = ConfigBase
 
 class StatUpdatePayload(BaseModel):
-    strUserId: str
-    strStatType: str
-    intValue: int
+    strUserId: str = Field(alias="user_id")
+    strStatType: str = Field(alias="stat_type")
+    intValue: int = Field(alias="value")
+    model_config = ConfigBase
 
 class ClaimRewardPayload(BaseModel):
-    strUserId: str
-    intCompletionId: int
-    intPointsToAdd: int
+    strUserId: str = Field(alias="user_id")
+    intCompletionId: int = Field(alias="completion_id")
+    intPointsToAdd: int = Field(alias="points_to_add")
+    model_config = ConfigBase
 
 
 # --- API Endpoints ---
@@ -202,33 +229,47 @@ def signIn(payload: UserCredentials):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+#   Input: Form data including title, user ID, optional text input, and optional file upload (PDF or TXT).
+#   Process:
+#       - Extract text from uploaded file or provided text input.
+#       - Validate extracted content length.
+#       - Generate study items via AI.
+#       - Insert new study set and items into Supabase.
+#       - Update user’s daily creation statistics.
+#   Output: JSON message confirming study set creation and the new set ID, or HTTP error on failure.
+
 @app.post("/process-notes")
 async def processNotes(
-    strTitle: str = Form(...), strUserId: str = Form(...), strText: str = Form(None), fileUpload: UploadFile = File(None)
-    # All input for security
+    # FIX: Use alias to map incoming form/file keys back to Python variable names
+    strTitle: str = Form(..., alias="title"), 
+    strUserId: str = Form(..., alias="user_id"), 
+    strText: str = Form(None, alias="text"), 
+    fileUpload: UploadFile = File(None, alias="file")
 ):
     # PROCESS: Initialise variable for extracted text
     strExtractedText = ""
     # PROCESS: Extract text from uploaded PDF or TXT file
+    
+    # NOTE: The variable fileUpload is used here, matching the function signature.
     if fileUpload and fileUpload.size > 0:
         if fileUpload.content_type == 'application/pdf':
             try:
                 bytesPdf = await fileUpload.read()
-                objPdfReader = PyPDF2.PdfReader(BytesIO(bytesPdf)) # PROCESS: Parse PDF
-                strExtractedText = "".join(page.extract_text() for page in objPdfReader.pages if page.extract_text()) # PROCESS: Extract text
+                objPdfReader = PyPDF2.PdfReader(BytesIO(bytesPdf))
+                strExtractedText = "".join(page.extract_text() for page in objPdfReader.pages if page.extract_text())
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
         else:
             bytesText = await fileUpload.read()
-            strExtractedText = bytesText.decode('utf-8') # PROCESS: Decode text
+            strExtractedText = bytesText.decode('utf-8')
     elif strText:
         strExtractedText = strText # INPUT: Use provided text
     else:
-        raise HTTPException(status_code=400, detail="No content provided.") # OUTPUT: Error
+        raise HTTPException(status_code=400, detail="No content provided.")
 
     if len(strExtractedText.strip()) < 50:
         # PROCESS: Validate text length
-        raise HTTPException(status_code=400, detail="The provided text is too short.") # OUTPUT: Error
+        raise HTTPException(status_code=400, detail="The provided text is too short.")
     # PROCESS: Generate study items via AI
     arrGeneratedItems = generateStudyItemsFromAI(strExtractedText)
     if not isinstance(arrGeneratedItems, list) or not all("question" in item and "answer" in item for item in arrGeneratedItems):
@@ -307,32 +348,35 @@ def generate_quiz(set_id: str):
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 # Logs a quiz attempt, logs the CR transaction, and updates the user's score.
+#   Input: QuizResultPayload containing user ID, set ID, score, total questions, and points to add.
+#   Process: 
+#       - Insert quiz attempt data into Supabase.
+#       - Insert CR transaction entry if points were earned.
+#       - Call RPC function to increment total CR score.
+#   Output: JSON message confirming successful logging or HTTP 500 error on failure.
+
 @app.post("/log-quiz-attempt")
 def log_quiz_attempt(payload: QuizResultPayload):
-    # INPUT: Quiz results payload
-
     try:
-        # PROCESS: Log the quiz attempt
-        if payload.total_questions > 0:
+        if payload.intTotalQuestions > 0:
             supabase.table("quiz_attempts").insert({
-                'user_id': payload.user_id,
-                'set_id': payload.set_id,
-                'score': payload.score,
-                'total_questions': payload.total_questions,
+                'user_id': payload.strUserId,
+                'set_id': payload.strSetId,
+                'score': payload.intScore,
+                'total_questions': payload.intTotalQuestions,
             }).execute()
 
-        # PROCESS: Log CR points earned
-        if payload.points_to_add > 0:
+        if payload.intPointsToAdd > 0:
             supabase.table("cr_transactions").insert({
-                'user_id': payload.user_id,
-                'points_earned': payload.points_to_add
+                'user_id': payload.strUserId,
+                'points_earned': payload.intPointsToAdd
             }).execute()
-         # PROCESS: Update user CR score via RPC
+         
         supabase.rpc('increment_cr_score', {
-            'user_id_to_update': payload.user_id,
-            'points_to_add': payload.points_to_add
+            'user_id_to_update': payload.strUserId,
+            'points_to_add': payload.intPointsToAdd
         }).execute()
-        # OUTPUT: Confirmation
+
         return {"message": "Quiz attempt logged and CR awarded successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error during quiz log: {str(e)}")
