@@ -3,44 +3,46 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getApiUrl } from '../lib'; // Import our new helper
 
-// Your amazing UI components (Typewriter, Hero, Demo) are here.
-const Typewriter = ({ words }: { words: string[] }) => {
-    const [wordIndex, setWordIndex] = useState(0);
-    const [charIndex, setCharIndex] = useState(0);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
-    const [currentText, setCurrentText] = useState('');
-    const typingSpeed = 100;
-    const deletingSpeed = 50;
-    const pauseDelay = 2000;
+const Typewriter = ({ words: arrWords }: { words: string[] }) => {
+    const [iWordIndex, setIWordIndex] = useState(0);
+    const [iCharIndex, setICharIndex] = useState(0);
+    const [bIsDeleting, setBIsDeleting] = useState(false);
+    const [bIsPaused, setBIsPaused] = useState(false);
+    const [strCurrentText, setStrCurrentText] = useState('');
+    const iTypingSpeed = 100;
+    const iDeletingSpeed = 50;
+    const iPauseDelay = 2000;
+
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
-        if (isPaused) {
-            timeoutId = setTimeout(() => { setIsPaused(false); setIsDeleting(true); }, pauseDelay);
-        } else if (isDeleting) {
-            if (charIndex > 0) {
-                timeoutId = setTimeout(() => setCharIndex(charIndex - 1), deletingSpeed);
+        if (bIsPaused) {
+            timeoutId = setTimeout(() => { setBIsPaused(false); setBIsDeleting(true); }, iPauseDelay);
+        } else if (bIsDeleting) {
+            if (iCharIndex > 0) {
+                timeoutId = setTimeout(() => setICharIndex(iCharIndex - 1), iDeletingSpeed);
             } else {
-                setIsDeleting(false);
-                setWordIndex((prev) => (prev + 1) % words.length);
+                setBIsDeleting(false);
+                setIWordIndex((prev) => (prev + 1) % arrWords.length);
             }
         } else {
-            if (charIndex < words[wordIndex].length) {
-                timeoutId = setTimeout(() => setCharIndex(charIndex + 1), typingSpeed);
+            if (iCharIndex < arrWords[iWordIndex].length) {
+                timeoutId = setTimeout(() => setICharIndex(iCharIndex + 1), iTypingSpeed);
             } else {
-                setIsPaused(true);
+                setBIsPaused(true);
             }
         }
-        setCurrentText(words[wordIndex].substring(0, charIndex));
+        setStrCurrentText(arrWords[iWordIndex].substring(0, iCharIndex));
         return () => clearTimeout(timeoutId);
-    }, [charIndex, wordIndex, isDeleting, isPaused, words]);
+    }, [iCharIndex, iWordIndex, bIsDeleting, bIsPaused, arrWords]);
+
     return (
         <span className="text-purple-400">
-            {currentText}
-            <span className={`typewriter-cursor ${isPaused ? 'blinking' : ''}`}></span>
+            {strCurrentText}
+            <span className={`typewriter-cursor ${bIsPaused ? 'blinking' : ''}`}></span>
         </span>
     );
 };
+
 const Hero = () => {
   return (
     <div className="h-screen flex flex-col justify-center items-center text-center">
@@ -62,6 +64,7 @@ const Hero = () => {
     </div>
   );
 };
+
 const Demo = () => {
     return (
         <div id="ai-preview" className="py-20 px-4 min-h-screen flex flex-col justify-center">
@@ -91,20 +94,20 @@ const Demo = () => {
 };
 
 export default function Home() {
-  const [message, setMessage] = useState('Connecting to the server...');
+  const [strMessage, setStrMessage] = useState('Connecting to the server...');
 
   useEffect(() => {
-    const apiUrl = getApiUrl('/'); // Use the helper for the root check
+    const strApiUrl = getApiUrl('/'); // Use the helper for the root check
     
-    fetch(apiUrl)
+    fetch(strApiUrl)
       .then(response => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         return response.json();
       })
-      .then(data => setMessage(data.message))
-      .catch(error => {
-        console.error("Failed to fetch from API:", error);
-        setMessage("Failed to connect.");
+      .then(objData => setStrMessage(objData.message))
+      .catch(err => {
+        console.error("Failed to fetch from API:", err);
+        setStrMessage("Failed to connect.");
       });
   }, []);
 
@@ -113,7 +116,7 @@ export default function Home() {
       <Hero />
       <Demo />
       <footer className="text-center py-8 text-gray-500 border-t border-gray-800">
-          <p>Connection Status: {message}</p>
+          <p>Connection Status: {strMessage}</p>
       </footer>
     </div>
   );

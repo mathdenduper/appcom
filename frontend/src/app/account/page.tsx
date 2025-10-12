@@ -1,4 +1,3 @@
-// frontend/src/app/account/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,104 +7,100 @@ import type { User } from '@supabase/supabase-js';
 import { getApiUrl } from '@/lib';
 
 export default function AccountPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [objUser, setObjUser] = useState<User | null>(null);
+  const [bIsLoading, setBIsLoading] = useState(true);
   const router = useRouter();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [nameMessage, setNameMessage] = useState<string | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
-  const [isNameUpdating, setIsNameUpdating] = useState(false);
+  const [strFirstName, setStrFirstName] = useState('');
+  const [strLastName, setStrLastName] = useState('');
+  const [strNameMessage, setStrNameMessage] = useState<string | null>(null);
+  const [strNameError, setStrNameError] = useState<string | null>(null);
+  const [bIsNameUpdating, setBIsNameUpdating] = useState(false);
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
+  const [strPassword, setStrPassword] = useState('');
+  const [strConfirmPassword, setStrConfirmPassword] = useState('');
+  const [strPasswordMessage, setStrPasswordMessage] = useState<string | null>(null);
+  const [strPasswordError, setStrPasswordError] = useState<string | null>(null);
+  const [bIsPasswordUpdating, setBIsPasswordUpdating] = useState(false);
 
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        setUser(session.user);
-        setFirstName(session.user.user_metadata?.first_name || '');
-        setLastName(session.user.user_metadata?.last_name || '');
+        setObjUser(session.user);
+        setStrFirstName(session.user.user_metadata?.first_name || '');
+        setStrLastName(session.user.user_metadata?.last_name || '');
       } else {
         router.push('/login');
       }
-      setLoading(false);
+      setBIsLoading(false);
     };
     checkUser();
   }, [router]);
 
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    setIsNameUpdating(true);
-    setNameMessage(null);
-    setNameError(null);
+    if (!objUser) return;
+    setBIsNameUpdating(true);
+    setStrNameMessage(null);
+    setStrNameError(null);
 
     try {
-      const apiUrl = getApiUrl('/update-profile');
-      const response = await fetch(apiUrl, {
+      const strApiUrl = getApiUrl('/update-profile');
+      const response = await fetch(strApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, first_name: firstName, last_name: lastName }),
+        body: JSON.stringify({ user_id: objUser.id, first_name: strFirstName, last_name: strLastName }),
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.detail || 'Failed to update profile.');
+      const objResult = await response.json();
+      if (!response.ok) throw new Error(objResult.detail || 'Failed to update profile.');
       
-      setNameMessage('Success! Your name has been updated.');
+      setStrNameMessage('Success! Your name has been updated.');
       
-      // --- THIS IS THE NEW LOGIC ---
-      // 1. Force Supabase to refresh the session with the latest user data from the database.
       await supabase.auth.refreshSession();
 
-      // 2. After a short delay to show the success message, redirect to the dashboard.
-      // The dashboard will now re-load with the fresh, updated session data.
       setTimeout(() => {
         router.push('/dashboard');
-      }, 1500); // 1.5-second delay
+      }, 1500);
 
     } catch (err: any) {
-      setNameError(err.message);
+      setStrNameError(err.message);
     } finally {
-      setIsNameUpdating(false);
+      setBIsNameUpdating(false);
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match.');
+    if (strPassword !== strConfirmPassword) {
+      setStrPasswordError('Passwords do not match.');
       return;
     }
-    if (password.length < 8) {
-      setPasswordError('Password must be at least 8 characters long.');
+    if (strPassword.length < 8) {
+      setStrPasswordError('Password must be at least 8 characters long.');
       return;
     }
 
-    setIsPasswordUpdating(true);
-    setPasswordMessage(null);
-    setPasswordError(null);
+    setBIsPasswordUpdating(true);
+    setStrPasswordMessage(null);
+    setStrPasswordError(null);
 
     try {
-      const { error } = await supabase.auth.updateUser({ password: password });
+      const { error } = await supabase.auth.updateUser({ password: strPassword });
       if (error) throw error;
-      setPasswordMessage('Your password has been updated successfully!');
-      setPassword('');
-      setConfirmPassword('');
+      setStrPasswordMessage('Your password has been updated successfully!');
+      setStrPassword('');
+      setStrConfirmPassword('');
     } catch(err: any) {
-      setPasswordError(err.message);
+      setStrPasswordError(err.message);
     } finally {
-      setIsPasswordUpdating(false);
+      setBIsPasswordUpdating(false);
     }
   };
 
 
-  if (loading) {
+  if (bIsLoading) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center">
         <p className="text-lg text-gray-400">Loading your account...</p>
@@ -126,29 +121,29 @@ export default function AccountPage() {
               <input
                 type="text"
                 placeholder="First name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                value={strFirstName}
+                onChange={(e) => setStrFirstName(e.target.value)}
                 className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
                 required
               />
               <input
                 type="text"
                 placeholder="Last name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                value={strLastName}
+                onChange={(e) => setStrLastName(e.target.value)}
                 className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
                 required
               />
             </div>
             <button
               type="submit"
-              disabled={isNameUpdating}
+              disabled={bIsNameUpdating}
               className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
             >
-              {isNameUpdating ? 'Updating...' : 'Save Name'}
+              {bIsNameUpdating ? 'Updating...' : 'Save Name'}
             </button>
-            {nameError && <p className="text-red-400 text-center">{nameError}</p>}
-            {nameMessage && <p className="text-green-400 text-center">{nameMessage}</p>}
+            {strNameError && <p className="text-red-400 text-center">{strNameError}</p>}
+            {strNameMessage && <p className="text-green-400 text-center">{strNameMessage}</p>}
           </form>
         </div>
 
@@ -159,28 +154,28 @@ export default function AccountPage() {
             <input
               type="password"
               placeholder="New password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={strPassword}
+              onChange={(e) => setStrPassword(e.target.value)}
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
             <input
               type="password"
               placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={strConfirmPassword}
+              onChange={(e) => setStrConfirmPassword(e.target.value)}
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
             <button
               type="submit"
-              disabled={isPasswordUpdating}
+              disabled={bIsPasswordUpdating}
               className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
             >
-              {isPasswordUpdating ? 'Updating...' : 'Change Password'}
+              {bIsPasswordUpdating ? 'Updating...' : 'Change Password'}
             </button>
-            {passwordError && <p className="text-red-400 text-center">{passwordError}</p>}
-            {passwordMessage && <p className="text-green-400 text-center">{passwordMessage}</p>}
+            {strPasswordError && <p className="text-red-400 text-center">{strPasswordError}</p>}
+            {strPasswordMessage && <p className="text-green-400 text-center">{strPasswordMessage}</p>}
           </form>
         </div>
 

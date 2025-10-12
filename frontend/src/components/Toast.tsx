@@ -9,20 +9,20 @@ interface ToastProps {
 }
 
 export default function Toast({ message, show }: ToastProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [bIsVisible, setBIsVisible] = useState(false);
 
   // This effect handles the fade-in and fade-out animations
   useEffect(() => {
     if (show) {
-      setIsVisible(true);
+      setBIsVisible(true);
     } else {
       // Delay hiding to allow for fade-out animation
-      const timer = setTimeout(() => setIsVisible(false), 300); // Matches the duration
-      return () => clearTimeout(timer);
+      const nTimer = setTimeout(() => setBIsVisible(false), 300); // Matches the duration
+      return () => clearTimeout(nTimer);
     }
   }, [show]);
 
-  if (!isVisible) {
+  if (!bIsVisible) {
     return null;
   }
 

@@ -19,54 +19,52 @@ interface SearchResultUser {
   last_name: string | null;
   email: string;
 }
-// ** FIXED INTERFACE **
 interface SentShare {
   created_at: string;
   is_accepted: boolean;
-  study_set_title: string; // Corrected from nested object
-  recipient_email: string;   // Corrected from nested object
+  study_set_title: string;
+  recipient_email: string;
 }
 
-
-// --- Share Modal Component (Unchanged) ---
-const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, studySets: StudySet[], onClose: () => void, onShareSent: () => void }) => {
-  const [selectedSet, setSelectedSet] = useState<string>(studySets[0]?.id || '');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResultUser[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedRecipient, setSelectedRecipient] = useState<SearchResultUser | null>(null);
+// --- SHARE MODAL ---
+const ShareModal = ({ objUser, arrStudySets, fnOnClose, fnOnShareSent }: { objUser: User, arrStudySets: StudySet[], fnOnClose: () => void, fnOnShareSent: () => void }) => {
+  const [strSelectedSetId, setStrSelectedSetId] = useState<string>(arrStudySets[0]?.id || '');
+  const [strSearchQuery, setStrSearchQuery] = useState('');
+  const [arrSearchResults, setArrSearchResults] = useState<SearchResultUser[]>([]);
+  const [bIsSearching, setBIsSearching] = useState(false);
+  const [objSelectedRecipient, setObjSelectedRecipient] = useState<SearchResultUser | null>(null);
 
   useEffect(() => {
-    if (searchQuery.length < 3) {
-      setSearchResults([]);
+    if (strSearchQuery.length < 3) {
+      setArrSearchResults([]);
       return;
     }
-    const search = setTimeout(async () => {
-      setIsSearching(true);
-      const response = await fetch(getApiUrl(`/users/search?query=${searchQuery}&current_user_id=${user.id}`));
-      const data = await response.json();
-      setSearchResults(data);
-      setIsSearching(false);
+    const timeoutId = setTimeout(async () => {
+      setBIsSearching(true);
+      const res = await fetch(getApiUrl(`/users/search?query=${strSearchQuery}&current_user_id=${objUser.id}`));
+      const arrData = await res.json();
+      setArrSearchResults(arrData);
+      setBIsSearching(false);
     }, 500);
-    return () => clearTimeout(search);
-  }, [searchQuery, user.id]);
+    return () => clearTimeout(timeoutId);
+  }, [strSearchQuery, objUser.id]);
 
-  const handleShare = async () => {
-    if (!selectedSet || !selectedRecipient) return;
+  const fnHandleShare = async () => {
+    if (!strSelectedSetId || !objSelectedRecipient) return;
     try {
       await fetch(getApiUrl('/share-set'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender_id: user.id,
-          recipient_id: selectedRecipient.id,
-          study_set_id: selectedSet,
+          sender_id: objUser.id,
+          recipient_id: objSelectedRecipient.id,
+          study_set_id: strSelectedSetId,
         }),
       });
-      onShareSent();
-      onClose();
-    } catch (error) {
-      console.error('Error sharing set:', error);
+      fnOnShareSent();
+      fnOnClose();
+    } catch (err) {
+      console.error('Error sharing set:', err);
     }
   };
 
@@ -75,7 +73,7 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
       <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex justify-between items-center p-6 border-b border-gray-700">
           <h2 className="text-2xl text-white font-bold">Share a Study Set</h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-700">
+          <button onClick={fnOnClose} className="p-1 rounded-full hover:bg-gray-700">
             <XMarkIcon className="h-6 w-6 text-white" />
           </button>
         </div>
@@ -83,114 +81,117 @@ const ShareModal = ({ user, studySets, onClose, onShareSent }: { user: User, stu
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">1. Choose a set to share</label>
             <select
-              value={selectedSet}
-              onChange={(e) => setSelectedSet(e.target.value)}
+              value={strSelectedSetId}
+              onChange={e => setStrSelectedSetId(e.target.value)}
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
             >
-              {studySets.map(set => <option key={set.id} value={set.id}>{set.title}</option>)}
+              {arrStudySets.map(objSet => <option key={objSet.id} value={objSet.id}>{objSet.title}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">2. Find a user to share with (by email)</label>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSelectedRecipient(null);
+              value={strSearchQuery}
+              onChange={e => {
+                setStrSearchQuery(e.target.value);
+                setObjSelectedRecipient(null);
               }}
               placeholder="Start typing an email..."
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
             />
-             {searchResults.length > 0 && !selectedRecipient && (
-                <ul className="mt-2 border border-gray-700 rounded-lg bg-gray-800 text-white max-h-48 overflow-y-auto">
-                    {searchResults.map(result => (
-                        <li 
-                            key={result.id} 
-                            onClick={() => {
-                                setSelectedRecipient(result);
-                                setSearchQuery(result.email);
-                                setSearchResults([]);
-                            }}
-                            className="p-3 hover:bg-gray-700 cursor-pointer"
-                        >
-                            {result.first_name || ''} {result.last_name || ''} ({result.email})
-                        </li>
-                    ))}
-                </ul>
+            {arrSearchResults.length > 0 && !objSelectedRecipient && (
+              <ul className="mt-2 border border-gray-700 rounded-lg bg-gray-800 text-white max-h-48 overflow-y-auto">
+                {arrSearchResults.map(objResult => (
+                  <li
+                    key={objResult.id}
+                    onClick={() => {
+                      setObjSelectedRecipient(objResult);
+                      setStrSearchQuery(objResult.email);
+                      setArrSearchResults([]);
+                    }}
+                    className="p-3 hover:bg-gray-700 cursor-pointer"
+                  >
+                    {objResult.first_name || ''} {objResult.last_name || ''} ({objResult.email})
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>
         <div className="p-6 border-t border-gray-700 flex justify-end gap-4">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 font-semibold rounded-lg">Cancel</button>
-            <button onClick={handleShare} disabled={!selectedRecipient} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50">
-              <PaperAirplaneIcon className="h-5 w-5" />
-              Send Share
-            </button>
+          <button onClick={fnOnClose} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 font-semibold rounded-lg">Cancel</button>
+          <button
+            onClick={fnHandleShare}
+            disabled={!objSelectedRecipient}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50"
+          >
+            <PaperAirplaneIcon className="h-5 w-5" />
+            Send Share
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-
 // --- MAIN SHARING PAGE ---
 export default function SharingPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [sentShares, setSentShares] = useState<SentShare[]>([]);
-  const [myStudySets, setMyStudySets] = useState<StudySet[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [objUser, setObjUser] = useState<User | null>(null);
+  const [arrSentShares, setArrSentShares] = useState<SentShare[]>([]);
+  const [arrMyStudySets, setArrMyStudySets] = useState<StudySet[]>([]);
+  const [bLoading, setBLoading] = useState(true);
+  const [bIsShareModalOpen, setBIsShareModalOpen] = useState(false);
 
-  const fetchPageData = async (currentUser: User) => {
+  const fnFetchPageData = async (currentUser: User) => {
     try {
-      const [sentRes, setsRes] = await Promise.all([
+      const [resSentShares, resMySets] = await Promise.all([
         fetch(getApiUrl(`/shares/sent/${currentUser.id}`)),
-        fetch(getApiUrl(`/my-study-sets/${currentUser.id}`))
+        fetch(getApiUrl(`/my-study-sets/${currentUser.id}`)),
       ]);
-      if (!sentRes.ok) throw new Error('Failed to fetch sent shares');
-      if (!setsRes.ok) throw new Error('Failed to fetch study sets');
-      setSentShares(await sentRes.json());
-      setMyStudySets(await setsRes.json());
-    } catch (error) {
-      console.error(error);
+      if (!resSentShares.ok) throw new Error('Failed to fetch sent shares');
+      if (!resMySets.ok) throw new Error('Failed to fetch study sets');
+      setArrSentShares(await resSentShares.json());
+      setArrMyStudySets(await resMySets.json());
+    } catch (err) {
+      console.error(err);
     }
   };
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
+    const fnFetchInitialData = async () => {
+      setBLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        setUser(session.user);
-        await fetchPageData(session.user);
+        setObjUser(session.user);
+        await fnFetchPageData(session.user);
       }
-      setLoading(false);
+      setBLoading(false);
     };
-    fetchInitialData();
+    fnFetchInitialData();
   }, []);
 
-  if (loading) {
+  if (bLoading) {
     return <p className="text-center text-gray-400 pt-40">Loading...</p>;
   }
 
   return (
     <>
-      {isShareModalOpen && user && (
-        <ShareModal 
-          user={user} 
-          studySets={myStudySets}
-          onClose={() => setIsShareModalOpen(false)}
-          onShareSent={() => user && fetchPageData(user)}
+      {bIsShareModalOpen && objUser && (
+        <ShareModal
+          objUser={objUser}
+          arrStudySets={arrMyStudySets}
+          fnOnClose={() => setBIsShareModalOpen(false)}
+          fnOnShareSent={() => objUser && fnFetchPageData(objUser)}
         />
       )}
       <div className="min-h-screen bg-background text-white pt-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold">Sharing Centre</h1>
-            <button 
-              onClick={() => setIsShareModalOpen(true)}
-              disabled={myStudySets.length === 0}
+            <button
+              onClick={() => setBIsShareModalOpen(true)}
+              disabled={arrMyStudySets.length === 0}
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShareIcon className="h-5 w-5" />
@@ -200,20 +201,19 @@ export default function SharingPage() {
 
           <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-6">
             <h2 className="text-2xl font-bold mb-6">Your Sent Shares</h2>
-            {sentShares.length > 0 ? (
+            {arrSentShares.length > 0 ? (
               <ul className="space-y-4">
-                {sentShares.map((item, index) => (
-                  <li key={index} className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4">
+                {arrSentShares.map((objShare, idx) => (
+                  <li key={idx} className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex items-center justify-between gap-4">
                     <div>
-                      {/* ** FIXED JSX ** */}
-                      <h3 className="font-semibold text-lg">{item.study_set_title}</h3>
-                      <p className="text-sm text-gray-400">Sent to: {item.recipient_email}</p>
+                      <h3 className="font-semibold text-lg">{objShare.study_set_title}</h3>
+                      <p className="text-sm text-gray-400">Sent to: {objShare.recipient_email}</p>
                     </div>
-                    {item.is_accepted ? (
-                       <span className="text-xs font-bold text-green-400 flex items-center gap-1.5">
-                          <CheckCircleIcon className="h-4 w-4"/>
-                          Accepted
-                       </span>
+                    {objShare.is_accepted ? (
+                      <span className="text-xs font-bold text-green-400 flex items-center gap-1.5">
+                        <CheckCircleIcon className="h-4 w-4"/>
+                        Accepted
+                      </span>
                     ) : (
                       <span className="text-xs font-bold text-yellow-400">PENDING</span>
                     )}

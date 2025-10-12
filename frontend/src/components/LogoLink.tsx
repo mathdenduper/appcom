@@ -7,28 +7,28 @@ import { supabase } from '../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
 export default function LogoLink() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [objUser, setObjUser] = useState<User | null>(null);
+  const [bLoading, setBLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
+    const checkUserInternal = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
+      setObjUser(session?.user ?? null);
+      setBLoading(false);
     };
-    checkUser();
+    checkUserInternal();
   }, []);
 
   // Determine the correct destination based on login status
-  const href = user ? '/dashboard' : '/';
+  const strHref = objUser ? '/dashboard' : '/';
 
-  if (loading) {
+  if (bLoading) {
     // Render a non-clickable placeholder while checking the session
     return <div className="text-2xl font-bold text-white">StudyAI</div>;
   }
 
   return (
-    <Link href={href} className="text-2xl font-bold text-white">
+    <Link href={strHref} className="text-2xl font-bold text-white">
       StudyAI
     </Link>
   );

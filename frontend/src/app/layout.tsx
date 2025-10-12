@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 
-const inter = Inter({ subsets: ["latin"] });
+const interFont = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Study App",
@@ -11,15 +11,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
+  children: reactChildren,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={interFont.className}>
         <Header />
-        <main>{children}</main>
+        <main>{reactChildren}</main>
       </body>
     </html>
   );

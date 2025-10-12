@@ -12,67 +12,66 @@ import { getApiUrl } from '@/lib';
 
 // --- INBOX POPOUT COMPONENT (WITH DECLINED STATE) ---
 function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) {
-  const [shares, setShares] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [arrShares, setArrShares] = useState<any[]>([]);
+  const [bLoading, setBLoading] = useState(true);
 
-  const fetchShares = async () => {
-    setLoading(true);
+  const fetchSharesInternal = async () => {
+    setBLoading(true);
     try {
-      const response = await fetch(getApiUrl(`/shares/inbox/${user.id}`));
-      if (!response.ok) throw new Error('Failed to fetch shares');
-      const data = await response.json();
-      setShares(data);
-    } catch (error) {
-      console.error(error);
+      const responseInternal = await fetch(getApiUrl(`/shares/inbox/${user.id}`));
+      if (!responseInternal.ok) throw new Error('Failed to fetch shares');
+      const arrData = await responseInternal.json();
+      setArrShares(arrData);
+    } catch (errInternal) {
+      console.error(errInternal);
     }
-    setLoading(false);
+    setBLoading(false);
   };
   
-  // Refactored to handle both accept and decline
-  const handleAction = async (share: any, action: 'accept' | 'decline') => {
-      let endpoint = '';
-      let payload: any = {};
+  const handleActionInternal = async (objShare: any, strAction: 'accept' | 'decline') => {
+      let strEndpoint = '';
+      let objPayload: any = {};
 
-      if (action === 'accept') {
-          endpoint = '/shares/accept';
-          payload = {
-              share_id: share.id,
+      if (strAction === 'accept') {
+          strEndpoint = '/shares/accept';
+          objPayload = {
+              share_id: objShare.id,
               recipient_id: user.id,
-              study_set_id: share.study_set_id,
+              study_set_id: objShare.study_set_id,
           };
-      } else { // decline
-          endpoint = '/shares/decline';
-          payload = { share_id: share.id };
+      } else {
+          strEndpoint = '/shares/decline';
+          objPayload = { share_id: objShare.id };
       }
 
       try {
-        await fetch(getApiUrl(endpoint), {
+        await fetch(getApiUrl(strEndpoint), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(objPayload),
         });
-        fetchShares();
+        fetchSharesInternal();
         onAction();
-      } catch (error) {
-        console.error(`Failed to ${action} share:`, error);
-        alert(`Failed to ${action} share.`);
+      } catch (errInternal) {
+        console.error(`Failed to ${strAction} share:`, errInternal);
+        alert(`Failed to ${strAction} share.`);
       }
   };
 
-  const unreadCount = shares.filter(s => s.status === 'pending').length;
+  const nUnreadCount = arrShares.filter(s => s.status === 'pending').length;
 
   return (
     <Popover className="relative">
       {({ open }) => (
         <>
           <Popover.Button
-            onClick={() => !open && fetchShares()}
+            onClick={() => !open && fetchSharesInternal()}
             className="relative p-2 rounded-full text-gray-300 hover:text-white hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
           >
             <EnvelopeIcon className="h-6 w-6" />
-            {unreadCount > 0 && (
+            {nUnreadCount > 0 && (
               <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-600 ring-2 ring-gray-800 text-xs font-bold flex items-center justify-center">
-                {unreadCount}
+                {nUnreadCount}
               </span>
             )}
           </Popover.Button>
@@ -90,39 +89,39 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
                 <h3 className="text-lg font-semibold text-white">Inbox</h3>
               </div>
               <div className="p-2 max-h-96 overflow-y-auto">
-                {loading ? <p className="text-center text-gray-300 py-4">Loading...</p>
-                : shares.length > 0 ? (
+                {bLoading ? <p className="text-center text-gray-300 py-4">Loading...</p>
+                : arrShares.length > 0 ? (
                   <ul className="space-y-2">
-                    {shares.map((share) => (
-                      <li key={share.id} className={`p-3 rounded-md ${share.status !== 'pending' ? 'opacity-60' : 'bg-gray-700/50'}`}>
-                        <p className="font-semibold text-white">{share.study_set_title || 'Untitled Set'}</p>
+                    {arrShares.map((objShare) => (
+                      <li key={objShare.id} className={`p-3 rounded-md ${objShare.status !== 'pending' ? 'opacity-60' : 'bg-gray-700/50'}`}>
+                        <p className="font-semibold text-white">{objShare.study_set_title || 'Untitled Set'}</p>
                         <p className="text-sm text-gray-300">
-                          From: {share.sender_first_name || 'Unknown'} {share.sender_last_name || ''}
+                          From: {objShare.sender_first_name || 'Unknown'} {objShare.sender_last_name || ''}
                         </p>
                         
-                        {share.status === 'accepted' && (
+                        {objShare.status === 'accepted' && (
                           <div className="mt-2 flex items-center gap-2 text-green-400 text-xs">
                             <CheckCircleIcon className="h-4 w-4" />
                             <span>Accepted</span>
                           </div>
                         )}
 
-                        {share.status === 'declined' && (
+                        {objShare.status === 'declined' && (
                           <div className="mt-2 flex items-center gap-2 text-red-400 text-xs">
                             <XCircleIcon className="h-4 w-4" />
                             <span>Declined</span>
                           </div>
                         )}
 
-                        {share.status === 'pending' && (
+                        {objShare.status === 'pending' && (
                           <div className="mt-2 flex items-center gap-2">
                             <button 
-                              onClick={() => handleAction(share, 'decline')}
+                              onClick={() => handleActionInternal(objShare, 'decline')}
                               className="flex-1 px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-500 text-white font-semibold rounded-md transition-colors">
                               Decline
                             </button>
                             <button 
-                              onClick={() => handleAction(share, 'accept')}
+                              onClick={() => handleActionInternal(objShare, 'accept')}
                               className="flex-1 px-3 py-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-md transition-colors">
                               Accept
                             </button>
@@ -144,77 +143,77 @@ function InboxPopover({ user, onAction }: { user: User; onAction: () => void }) 
 }
 
 
-// --- (The rest of your Header.tsx component remains unchanged) ---
+// --- HEADER COMPONENT ---
 export default function Header() {
-  const [user, setUser] = useState<User | null>(null);
-  const [inboxShares, setInboxShares] = useState<any[]>([]);
-  const [inboxLoading, setInboxLoading] = useState(true);
+  const [objUser, setObjUser] = useState<User | null>(null);
+  const [arrInboxShares, setArrInboxShares] = useState<any[]>([]);
+  const [bInboxLoading, setBInboxLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
+  const strPathname = usePathname();
 
-  const fetchInbox = async (currentUser: User) => {
+  const fetchInboxInternal = async (currentUser: User) => {
     if (!currentUser) return;
-    setInboxLoading(true);
+    setBInboxLoading(true);
     try {
-      const response = await fetch(getApiUrl(`/shares/inbox/${currentUser.id}`));
-      if (!response.ok) throw new Error('Failed to fetch shares');
-      const data = await response.json();
-      setInboxShares(data);
-    } catch (error) {
-      console.error(error);
+      const responseInternal = await fetch(getApiUrl(`/shares/inbox/${currentUser.id}`));
+      if (!responseInternal.ok) throw new Error('Failed to fetch shares');
+      const arrData = await responseInternal.json();
+      setArrInboxShares(arrData);
+    } catch (errInternal) {
+      console.error(errInternal);
     }
-    setInboxLoading(false);
+    setBInboxLoading(false);
   };
   
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setObjUser(session?.user ?? null);
       if (session?.user) {
-        fetchInbox(session.user);
+        fetchInboxInternal(session.user);
       } else {
-        setInboxShares([]);
+        setArrInboxShares([]);
       }
     });
-    const getInitialUser = async () => {
+    const getInitialUserInternal = async () => {
         const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        setObjUser(user);
         if (user) {
-            fetchInbox(user);
+            fetchInboxInternal(user);
         }
     }
-    getInitialUser();
+    getInitialUserInternal();
     return () => subscription?.unsubscribe();
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOutInternal = async () => {
     await supabase.auth.signOut();
     router.push('/');
   };
 
-  const getInitials = () => {
-    const firstName = user?.user_metadata?.first_name || '';
-    const lastName = user?.user_metadata?.last_name || '';
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`;
+  const getInitialsInternal = () => {
+    const strFirstName = objUser?.user_metadata?.first_name || '';
+    const strLastName = objUser?.user_metadata?.last_name || '';
+    if (strFirstName && strLastName) {
+      return `${strFirstName[0]}${strLastName[0]}`;
     }
-    return user?.email?.[0].toUpperCase() || '';
+    return objUser?.email?.[0].toUpperCase() || '';
   };
 
-  const isHomePage = pathname === '/';
+  const bIsHomePage = strPathname === '/';
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-black bg-opacity-30 backdrop-blur-lg border-b border-gray-800">
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <LogoLink />
         <div className="flex items-center space-x-4">
-          {user && !isHomePage ? (
+          {objUser && !bIsHomePage ? (
             <div className="flex items-center space-x-4">
-              <InboxPopover user={user} onAction={() => user && fetchInbox(user)} />
+              <InboxPopover user={objUser} onAction={() => objUser && fetchInboxInternal(objUser)} />
               <Menu as="div" className="relative">
                 <div>
                   <Menu.Button className="flex items-center text-sm rounded-full text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                     <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center font-bold">
-                      {getInitials()}
+                      {getInitialsInternal()}
                     </div>
                   </Menu.Button>
                 </div>
@@ -229,7 +228,7 @@ export default function Header() {
                       </Menu.Item>
                     <Menu.Item>
                        {({ active }) => (
-                        <button onClick={handleSignOut} className={`${active ? 'bg-gray-700' : ''} w-full text-left block px-4 py-2 text-sm text-red-400`}>
+                        <button onClick={handleSignOutInternal} className={`${active ? 'bg-gray-700' : ''} w-full text-left block px-4 py-2 text-sm text-red-400`}>
                           Sign out
                         </button>
                       )}

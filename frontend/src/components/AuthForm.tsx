@@ -9,49 +9,43 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ mode }: AuthFormProps) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [strFirstName, setStrFirstName] = useState('');
+  const [strLastName, setStrLastName] = useState('');
+  const [strEmail, setStrEmail] = useState('');
+  const [strPassword, setStrPassword] = useState('');
+  const [strError, setStrError] = useState<string | null>(null);
+  const [bLoading, setBLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const handleSubmit = async (evtEvent: React.FormEvent) => {
+    evtEvent.preventDefault();
+    setBLoading(true);
+    setStrError(null);
 
     try {
-      let authResponse;
+      let authResponseInternal;
       if (mode === 'signup') {
-        // --- THIS IS THE CORRECTED PART ---
-        // We sign up the user. Because email confirmation is off in Supabase,
-        // this action will also automatically log them in.
-        authResponse = await supabase.auth.signUp({ 
-          email, 
-          password,
+        authResponseInternal = await supabase.auth.signUp({ 
+          email: strEmail, 
+          password: strPassword,
           options: {
             data: {
-              first_name: firstName,
-              last_name: lastName,
+              first_name: strFirstName,
+              last_name: strLastName,
             }
           }
         });
       } else {
-        // The login process remains the same.
-        authResponse = await supabase.auth.signInWithPassword({ email, password });
+        authResponseInternal = await supabase.auth.signInWithPassword({ email: strEmail, password: strPassword });
       }
 
-      // Check for any errors from Supabase
-      if (authResponse.error) throw authResponse.error;
+      if (authResponseInternal.error) throw authResponseInternal.error;
 
-      // After a successful signup OR signin, we now redirect immediately.
       window.location.href = '/dashboard';
 
-    } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+    } catch (errInternal: any) {
+      setStrError(errInternal.message || 'An error occurred.');
     } finally {
-      setLoading(false);
+      setBLoading(false);
     }
   };
 
@@ -70,16 +64,16 @@ export default function AuthForm({ mode }: AuthFormProps) {
             <input
               type="text"
               placeholder="First name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              value={strFirstName}
+              onChange={(e) => setStrFirstName(e.target.value)}
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
             <input
               type="text"
               placeholder="Last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              value={strLastName}
+              onChange={(e) => setStrLastName(e.target.value)}
               className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
               required
             />
@@ -88,28 +82,28 @@ export default function AuthForm({ mode }: AuthFormProps) {
         <input
           type="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={strEmail}
+          onChange={(e) => setStrEmail(e.target.value)}
           className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
           required
         />
         <input
           type="password"
           placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={strPassword}
+          onChange={(e) => setStrPassword(e.target.value)}
           className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
           required
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={bLoading}
           className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold transition-colors disabled:bg-gray-500"
         >
-          {loading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Create account')}
+          {bLoading ? 'Processing...' : (mode === 'signin' ? 'Sign In' : 'Create account')}
         </button>
         
-        {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+        {strError && <p className="text-red-400 text-center mt-4">{strError}</p>}
       </form>
 
       <div className="text-center mt-6">

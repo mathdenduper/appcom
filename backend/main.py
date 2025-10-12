@@ -1,4 +1,9 @@
-# backend/main.py
+# Author: Tristan Bong
+# Page name: main.py
+# Page purpose: Runs the program's backend
+# Date created: 14/09
+
+# Importing libraries
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -13,196 +18,216 @@ import random
 from typing import Optional
 import datetime
 
+# Loads environmental variables
 load_dotenv()
 app = FastAPI()
 
-origins = ["*"] 
+arrOrigins = ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=arrOrigins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-def generate_study_items_from_ai(text: str):
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
+# --- Functions ---
+def generateStudyItemsFromAI(strText: str):
+    strApiKey = os.environ.get("GROQ_API_KEY")
+    if not strApiKey:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not found in environment.")
-    client = Groq(api_key=api_key)
-    word_count = len(text.split())
-    num_items = max(3, min(15, word_count // 150))
-    system_prompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object."
-    user_prompt = f"Please generate {num_items} question and answer pairs from the following text. Format your response as a JSON object with a single key 'study_items' which contains a list of objects, where each object has a 'question' key and an 'answer' key. Text: {text[:3000]}"
+    
+    objClient = Groq(api_key=strApiKey)
+    intWordCount = len(strText.split())
+    intNumItems = max(3, min(15, intWordCount // 150))
+    
+    strSystemPrompt = "You are a helpful study assistant. Your task is to generate question and answer pairs from the provided text. You must respond with only a valid JSON object."
+    strUserPrompt = f"Please generate {intNumItems} question and answer pairs from the following text. Format your response as a JSON object with a single key 'study_items' which contains a list of objects, where each object has a 'question' key and an 'answer' key. Text: {strText[:3000]}"
+    
     try:
-        chat_completion = client.chat.completions.create(
+        objChatCompletion = objClient.chat.completions.create(
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": strSystemPrompt},
+                {"role": "user", "content": strUserPrompt},
             ],
             model="llama-3.1-8b-instant",
             temperature=0.3,
             max_tokens=2048,
             response_format={"type": "json_object"},
         )
-        response_content = chat_completion.choices[0].message.content
-        parsed_json = json.loads(response_content)
-        study_items = parsed_json.get("study_items")
-        if not isinstance(study_items, list):
+        strResponseContent = objChatCompletion.choices[0].message.content
+        objParsedJson = json.loads(strResponseContent)
+        arrStudyItems = objParsedJson.get("study_items")
+        if not isinstance(arrStudyItems, list):
             raise HTTPException(status_code=500, detail="AI did not return a valid list of study items in its JSON response.")
-        return study_items
+        return arrStudyItems
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request failed: {str(e)}")
 
-def generate_quiz_from_ai(text: str):
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
+
+def generateQuizFromAI(strText: str):
+    strApiKey = os.environ.get("GROQ_API_KEY")
+    if not strApiKey:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not found in environment.")
-    client = Groq(api_key=api_key)
-    word_count = len(text.split())
-    num_questions = max(3, min(10, word_count // 200))
-    system_prompt = "You are an expert quiz designer. Your task is to create a multiple-choice quiz from the provided text. You must respond with only a valid JSON object."
-    user_prompt = f"Please generate exactly {num_questions} multiple-choice questions from the following text. Format your response as a JSON object with a single key 'quiz_questions', which contains a list of objects. Each object must have a 'question' key, a 'correct_answer' key, and an 'options' key which is a list of 4 strings (the correct answer plus three plausible distractors). Text: {text[:4000]}"
+    
+    objClient = Groq(api_key=strApiKey)
+    intWordCount = len(strText.split())
+    intNumQuestions = max(3, min(10, intWordCount // 200))
+    
+    strSystemPrompt = "You are an expert quiz designer. Your task is to create a multiple-choice quiz from the provided text. You must respond with only a valid JSON object."
+    strUserPrompt = f"Please generate exactly {intNumQuestions} multiple-choice questions from the following text. Format your response as a JSON object with a single key 'quiz_questions', which contains a list of objects. Each object must have a 'question' key, a 'correct_answer' key, and an 'options' key which is a list of 4 strings (the correct answer plus three plausible distractors). Text: {strText[:4000]}"
+    
     try:
-        chat_completion = client.chat.completions.create(
+        objChatCompletion = objClient.chat.completions.create(
             messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "system", "content": strSystemPrompt},
+                {"role": "user", "content": strUserPrompt},
             ],
             model="llama-3.1-8b-instant",
             temperature=0.7,
             max_tokens=2048,
             response_format={"type": "json_object"},
         )
-        response_content = chat_completion.choices[0].message.content
-        parsed_json = json.loads(response_content)
-        quiz_questions = parsed_json.get("quiz_questions")
-        if not isinstance(quiz_questions, list):
+        strResponseContent = objChatCompletion.choices[0].message.content
+        objParsedJson = json.loads(strResponseContent)
+        arrQuizQuestions = objParsedJson.get("quiz_questions")
+        if not isinstance(arrQuizQuestions, list):
             raise HTTPException(status_code=500, detail="AI did not return a valid list of quiz questions.")
-        for question in quiz_questions:
-            if 'options' in question and isinstance(question['options'], list):
-                random.shuffle(question['options'])
-        return quiz_questions
+        
+        for objQuestion in arrQuizQuestions:
+            if 'options' in objQuestion and isinstance(objQuestion['options'], list):
+                random.shuffle(objQuestion['options'])
+        return arrQuizQuestions
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Groq API request for quiz failed: {str(e)}")
 
 
-# --- Data Models (Consolidated and Corrected) ---
+# --- Data Models ---
 class UserCredentials(BaseModel):
-    email: EmailStr
-    password: str
+    strEmail: EmailStr
+    strPassword: str
 
 class QuizResultPayload(BaseModel):
-    user_id: str
-    set_id: str
-    score: int
-    total_questions: int
-    points_to_add: int
+    strUserId: str
+    strSetId: str
+    intScore: int
+    intTotalQuestions: int
+    intPointsToAdd: int
 
 class UpdateProfilePayload(BaseModel):
-    user_id: str
-    first_name: str
-    last_name: str
+    strUserId: str
+    strFirstName: str
+    strLastName: str
 
-# ** NEW: Added the missing Pydantic model for awarding points **
 class AwardCrPayload(BaseModel):
-    user_id: str
-    points_to_add: int
+    strUserId: str
+    intPointsToAdd: int
 
 class SharePayload(BaseModel):
-    sender_id: str
-    recipient_id: str
-    study_set_id: str
+    strSenderId: str
+    strRecipientId: str
+    strStudySetId: str
 
 class AcceptSharePayload(BaseModel):
-    share_id: str
-    recipient_id: str
-    study_set_id: str
+    strShareId: str
+    strRecipientId: str
+    strStudySetId: str
 
 class DeclineSharePayload(BaseModel):
-    share_id: str
+    strShareId: str
 
 class DeletePayload(BaseModel):
-    user_id: str
+    strUserId: str
 
 class QuestCompletionPayload(BaseModel):
-    user_id: str
-    quest_type: str
-    value: int
+    strUserId: str
+    strQuestType: str
+    intValue: int
 
 class StatUpdatePayload(BaseModel):
-    user_id: str
-    stat_type: str
-    value: int
+    strUserId: str
+    strStatType: str
+    intValue: int
+
 class ClaimRewardPayload(BaseModel):
-    user_id: str
-    completion_id: int
-    points_to_add: int
+    strUserId: str
+    intCompletionId: int
+    intPointsToAdd: int
+
 
 # --- API Endpoints ---
 @app.get("/")
-def read_root():
+def readRoot():
     return {"message": "Welcome to the StudyAI API!"}
 
 @app.post("/signup")
-def sign_up(credentials: UserCredentials):
+def signUp(payload: UserCredentials):
     try:
-        res = supabase.auth.sign_up({"email": credentials.email, "password": credentials.password})
+        res = supabase.auth.sign_up({"email": payload.strEmail, "password": payload.strPassword})
         return {"message": "Signup successful!", "data": res}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/login")
-def sign_in(credentials: UserCredentials):
+def signIn(payload: UserCredentials):
     try:
-        res = supabase.auth.sign_in_with_password({"email": credentials.email, "password": credentials.password})
+        res = supabase.auth.sign_in_with_password({"email": payload.strEmail, "password": payload.strPassword})
         return {"message": "Login successful!", "data": res}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/process-notes")
-async def process_notes(
-    title: str = Form(...), user_id: str = Form(...), text: str = Form(None), file: UploadFile = File(None)
+async def processNotes(
+    strTitle: str = Form(...), strUserId: str = Form(...), strText: str = Form(None), fileUpload: UploadFile = File(None)
 ):
-    extracted_text = ""
-    if file and file.size > 0:
-        if file.content_type == 'application/pdf':
+    strExtractedText = ""
+    if fileUpload and fileUpload.size > 0:
+        if fileUpload.content_type == 'application/pdf':
             try:
-                pdf_content = await file.read()
-                pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_content))
-                extracted_text = "".join(page.extract_text() for page in pdf_reader.pages if page.extract_text())
+                bytesPdf = await fileUpload.read()
+                objPdfReader = PyPDF2.PdfReader(BytesIO(bytesPdf))
+                strExtractedText = "".join(page.extract_text() for page in objPdfReader.pages if page.extract_text())
             except Exception as e:
                 raise HTTPException(status_code=400, detail=f"Error processing PDF: {str(e)}")
         else:
-            text_content = await file.read()
-            extracted_text = text_content.decode('utf-8')
-    elif text:
-        extracted_text = text
+            bytesText = await fileUpload.read()
+            strExtractedText = bytesText.decode('utf-8')
+    elif strText:
+        strExtractedText = strText
     else:
         raise HTTPException(status_code=400, detail="No content provided.")
-    if len(extracted_text.strip()) < 50:
-         raise HTTPException(status_code=400, detail="The provided text is too short.")
-    generated_items = generate_study_items_from_ai(extracted_text)
-    if not isinstance(generated_items, list) or not all("question" in item and "answer" in item for item in generated_items):
-        raise HTTPException(status_code=500, detail="AI returned data in an unexpected format.")
-    try:
-        set_insert_res = supabase.table("study_sets").insert({"user_id": user_id, "title": title, "original_content": extracted_text}).execute()
-        new_set_id = set_insert_res.data[0]['id']
-        items_to_insert = [{"set_id": new_set_id, "user_id": user_id, "question": item['question'], "answer": item['answer']} for item in generated_items]
-        supabase.table("study_items").insert(items_to_insert).execute()
 
-        # --- THIS IS THE FIX ---
+    if len(strExtractedText.strip()) < 50:
+        raise HTTPException(status_code=400, detail="The provided text is too short.")
+
+    arrGeneratedItems = generateStudyItemsFromAI(strExtractedText)
+    if not isinstance(arrGeneratedItems, list) or not all("question" in item and "answer" in item for item in arrGeneratedItems):
+        raise HTTPException(status_code=500, detail="AI returned data in an unexpected format.")
+
+    try:
+        objSetInsertRes = supabase.table("study_sets").insert({
+            "user_id": strUserId,
+            "title": strTitle,
+            "original_content": strExtractedText
+        }).execute()
+        strNewSetId = objSetInsertRes.data[0]['id']
+
+        arrItemsToInsert = [
+            {"set_id": strNewSetId, "user_id": strUserId, "question": item['question'], "answer": item['answer']}
+            for item in arrGeneratedItems
+        ]
+        supabase.table("study_items").insert(arrItemsToInsert).execute()
+
         # Track that a new set has been created
         supabase.rpc('update_daily_stat', {
-            'p_user_id': user_id,
+            'p_user_id': strUserId,
             'p_stat_type': 'sets_created',
             'p_increment_value': 1
         }).execute()
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    return {"message": "Study set generated and saved successfully!", "study_set_id": new_set_id}
 
+    return {"message": "Study set generated and saved successfully!", "study_set_id": strNewSetId}
 
 @app.get("/study-set/{set_id}")
 def get_study_set(set_id: str):
@@ -235,14 +260,13 @@ def generate_quiz(set_id: str):
             raise HTTPException(status_code=404, detail="Original content for this study set not found.")
         
         original_content = set_res.data["original_content"]
-        quiz_questions = generate_quiz_from_ai(original_content)
+        quiz_questions = generateQuizFromAI(original_content)
         return quiz_questions
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
-# ** FIXED: Removed the duplicate log_quiz_attempt function **
 @app.post("/log-quiz-attempt")
 def log_quiz_attempt(payload: QuizResultPayload):
     """
@@ -397,12 +421,12 @@ def accept_share(payload: AcceptSharePayload):
             "title": f"(Shared) {original_set['title']}",
             "original_content": original_set['original_content']
         }).execute()
-        new_set_id = new_set_res.data[0]['id']
+        strNewSetId = new_set_res.data[0]['id']
 
         # Step 4: Copy the items to the new set
         if original_items:
             items_to_copy = [
-                {"set_id": new_set_id, "user_id": payload.recipient_id, "question": item['question'], "answer": item['answer']}
+                {"set_id": strNewSetId, "user_id": payload.recipient_id, "question": item['question'], "answer": item['answer']}
                 for item in original_items
             ]
             supabase.table("study_items").insert(items_to_copy).execute()
@@ -479,7 +503,6 @@ def get_daily_quests(user_id: str):
 
 @app.post("/quests/claim-reward")
 def claim_quest_reward(payload: ClaimRewardPayload):
-    # ... (this endpoint is unchanged)
     try:
         res = supabase.table("user_quest_completions").select("*, quests(*)").eq("id", payload.completion_id).eq("user_id", payload.user_id).single().execute()
         if not res.data or res.data['is_claimed']:
