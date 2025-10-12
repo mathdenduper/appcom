@@ -257,7 +257,7 @@ export default function DashboardPage() {
           <Link href="/quests" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700">
             <StarIcon className="h-6 w-6"/> Quests
           </Link>
-          <button className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</button>
+          <Link href="/account" className="flex items-center justify-center gap-3 w-full p-4 bg-gray-800 hover:bg-gray-700 rounded-lg text-white font-semibold transition-colors border border-gray-700"><SettingsIcon /> Settings</Link>
         </div>
         <div className="mt-auto">
           <ProfileMenu user={user} onLogout={handleLogout} />

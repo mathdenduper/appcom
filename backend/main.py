@@ -298,7 +298,6 @@ def get_results(user_id: str):
 
 @app.get("/leaderboard")
 def get_leaderboard(timespan: Optional[str] = 'all_time', timezone: Optional[str] = 'UTC'):
-    # ... (Your existing code, unchanged)
     try:
         res = supabase.rpc('get_leaderboard', {'timespan_filter': timespan, 'p_timezone': timezone}).execute()
         if res.data is None:

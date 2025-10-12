@@ -142,22 +142,28 @@ export default function MySetsPage() {
                 {myOriginalSets.length > 0 ? (
                     <ul className="space-y-4">
                     {myOriginalSets.map(set => (
-                        <li key={set.id} className="bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-between gap-4">
-                            <Link href={`/play/${set.id}`} className="flex-grow p-4 hover:bg-gray-700 rounded-l-lg transition-colors">
-                                <div>
-                                    <h3 className="font-semibold text-lg">{set.title}</h3>
-                                    <p className="text-sm text-gray-400">
-                                        Created on: {new Date(set.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </Link>
-                            <button 
-                                onClick={() => setSetToDelete(set)}
-                                className="p-4 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-lg transition-colors"
-                                title="Delete Set"
-                            >
-                                <TrashIcon className="h-5 w-5"/>
-                            </button>
+                        <li
+                        key={set.id}
+                        className="bg-gray-800 border border-gray-700 rounded-lg flex items-stretch justify-between gap-4"
+                        >
+                        <Link
+                            href={`/play/${set.id}`}
+                            className="flex-grow p-4 hover:bg-gray-700 rounded-l-lg transition-colors"
+                        >
+                            <div>
+                            <h3 className="font-semibold text-lg">{set.title}</h3>
+                            <p className="text-sm text-gray-400">
+                                Created on: {new Date(set.created_at).toLocaleDateString()}
+                            </p>
+                            </div>
+                        </Link>
+                        <button
+                            onClick={() => setSetToDelete(set)}
+                            className="px-4 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-lg transition-colors flex items-center"
+                            title="Delete Set"
+                        >
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
                         </li>
                     ))}
                     </ul>
@@ -175,22 +181,28 @@ export default function MySetsPage() {
                 {sharedWithMeSets.length > 0 ? (
                     <ul className="space-y-4">
                     {sharedWithMeSets.map(set => (
-                        <li key={set.id} className="bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-between gap-4">
-                            <Link href={`/play/${set.id}`} className="flex-grow p-4 hover:bg-gray-700 rounded-l-lg transition-colors">
-                                <div>
-                                <h3 className="font-semibold text-lg">{set.title.replace('(Shared) ', '')}</h3>
-                                <p className="text-sm text-gray-400">
-                                    Accepted on: {new Date(set.created_at).toLocaleDateString()}
-                                </p>
-                                </div>
-                            </Link>
-                             <button 
-                                onClick={() => setSetToDelete(set)}
-                                className="p-4 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-lg transition-colors"
-                                title="Delete Set"
-                            >
-                                <TrashIcon className="h-5 w-5"/>
-                            </button>
+                        <li
+                        key={set.id}
+                        className="bg-gray-800 border border-gray-700 rounded-lg flex items-stretch justify-between gap-4"
+                        >
+                        <Link
+                            href={`/play/${set.id}`}
+                            className="flex-grow p-4 hover:bg-gray-700 rounded-l-lg transition-colors"
+                        >
+                            <div>
+                            <h3 className="font-semibold text-lg">{set.title}</h3>
+                            <p className="text-sm text-gray-400">
+                                Created on: {new Date(set.created_at).toLocaleDateString()}
+                            </p>
+                            </div>
+                        </Link>
+                        <button
+                            onClick={() => setSetToDelete(set)}
+                            className="px-4 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-lg transition-colors flex items-center"
+                            title="Delete Set"
+                        >
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
                         </li>
                     ))}
                     </ul>

@@ -7,6 +7,7 @@ import { getApiUrl, trackUserAction } from '../../../../lib';
 import { supabase } from '../../../../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
+// --- Data Structures for the Quiz ---
 interface QuizQuestion {
   question: string;
   options: string[];
@@ -34,7 +35,7 @@ export default function QuizPage() {
         setUser(session.user);
       } else {
         router.push('/login');
-        return;
+        return; // Stop execution if no user
       }
 
       setLoading(true);
@@ -72,7 +73,6 @@ export default function QuizPage() {
     } else {
       if (user) {
         const totalQuestions = questions.length;
-        const percentageScore = Math.round((score / totalQuestions) * 100);
         
         try {
           const apiUrl = getApiUrl('/log-quiz-attempt');
@@ -82,7 +82,10 @@ export default function QuizPage() {
             body: JSON.stringify({ 
               user_id: user.id, 
               set_id: setId,
-              score: percentageScore,
+              // --- THIS IS THE FIX ---
+              // We are now sending the raw score (number of correct answers)
+              // instead of the calculated percentage.
+              score: score,
               total_questions: totalQuestions,
               points_to_add: score * 10
             }),
@@ -91,11 +94,10 @@ export default function QuizPage() {
           console.error("Failed to log quiz attempt:", error);
         }
 
-        // --- THIS IS THE FIX ---
-        // 1. Track that a quiz was completed
+        // --- Quest Tracking Logic ---
+        const percentageScore = Math.round((score / totalQuestions) * 100);
         trackUserAction(user.id, 'quizzes_completed', 1);
-        
-        // 2. Track the number of correct answers for cumulative quests
+        trackUserAction(user.id, 'SCORE_PERCENTAGE', percentageScore);
         if (score > 0) {
           trackUserAction(user.id, 'quiz_questions_correct', score);
         }
