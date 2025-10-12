@@ -21,6 +21,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
+    "/account/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/account/page.js"
+    ],
+    "/sets/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/sets/page.js"
+    ],
     "/play/[setId]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -36,10 +46,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/play/[setId]/flashcards/page.js"
     ],
-    "/sets/page": [
+    "/results/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/sets/page.js"
+      "static/chunks/app/results/page.js"
+    ],
+    "/uploader/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/uploader/page.js"
+    ],
+    "/sharing/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/sharing/page.js"
+    ],
+    "/quests/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/quests/page.js"
     ]
   }
 }

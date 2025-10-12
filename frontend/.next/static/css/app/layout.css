@@ -70,6 +70,13 @@
 /*!*****************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[3]!./src/app/globals.css ***!
   \*****************************************************************************************************************************************************************************************************************************************************************/
+/* Author: Tristan Bong
+   Page name: globals.css
+   Page purpose: Creates CSS for the rest of the application.
+   Date created: 14/09/2025 */
+
+/* No IPO for this file as this file is fully UI */
+
 *, ::before, ::after {
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -176,9 +183,11 @@
   --tw-contain-layout:  ;
   --tw-contain-paint:  ;
   --tw-contain-style:  ;
-}/*
-! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com
-*//*
+}
+
+/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */
+
+/*
 1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
 2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
 */
@@ -495,6 +504,7 @@ menu {
 /*
 Reset default styling for dialogs.
 */
+
 dialog {
   padding: 0;
 }
@@ -535,6 +545,7 @@ button,
 /*
 Make sure disabled buttons don't get the pointer cursor.
 */
+
 :disabled {
   cursor: default;
 }
@@ -568,6 +579,7 @@ video {
 }
 
 /* Make elements with the HTML hidden attribute stay hidden by default */
+
 [hidden]:where(:not([hidden="until-found"])) {
   display: none;
 }
@@ -606,6 +618,9 @@ video {
 }
 .pointer-events-none {
   pointer-events: none;
+}
+.visible {
+  visibility: visible;
 }
 .fixed {
   position: fixed;
@@ -1217,6 +1232,10 @@ video {
 .italic {
   font-style: italic;
 }
+.ordinal {
+  --tw-ordinal: ordinal;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
 .leading-tight {
   line-height: 1.25;
 }
@@ -1375,8 +1394,8 @@ body {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background-color: #a9a3c2; /* Muted lavender colour */
-  margin-left: 2px; /* CORRECTED: Reduced distance from the text */
+  background-color: #a9a3c2;
+  margin-left: 2px;
   vertical-align: middle;
 }
 
@@ -1389,7 +1408,7 @@ body {
 
 /* This class adds the blinking animation when applied */
 .typewriter-cursor.blinking {
-  animation: blink 1s infinite; /* CORRECTED: Slowed down the blinking speed */
+  animation: blink 1s infinite;
 }
 
 /* --- Card Flip Animation Utilities --- */

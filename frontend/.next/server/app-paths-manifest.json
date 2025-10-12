@@ -1,8 +1,10 @@
 {
-  "/login/page": "app/login/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
+  "/uploader/page": "app/uploader/page.js",
   "/play/[setId]/page": "app/play/[setId]/page.js",
   "/play/[setId]/quiz/page": "app/play/[setId]/quiz/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/play/[setId]/flashcards/page": "app/play/[setId]/flashcards/page.js",
+  "/results/page": "app/results/page.js",
+  "/quests/page": "app/quests/page.js",
   "/sets/page": "app/sets/page.js"
 }

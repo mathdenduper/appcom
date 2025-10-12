@@ -79,7 +79,17 @@ export default function AccountPage() {
       });
 
       const objResult = await response.json();
-      if (!response.ok) throw new Error(objResult.detail || 'Failed to update profile.');
+      if (!response.ok) {
+        // Handle if backend sends array of error objects (e.g. [{ detail: "msg" }, ...])
+        let strErrorMessage = 'Failed to update profile.';
+        if (Array.isArray(objResult)) {
+          strErrorMessage = objResult.map((err: any) => err.detail || JSON.stringify(err)).join(', ');
+        } else if (typeof objResult === 'object' && objResult.detail) {
+          strErrorMessage = objResult.detail;
+        }
+        throw new Error(strErrorMessage);
+      }
+
 
       setStrNameMessage('Success! Your name has been updated.'); // OUTPUT: success feedback
       await supabase.auth.refreshSession(); // PROCESS: refresh session data
